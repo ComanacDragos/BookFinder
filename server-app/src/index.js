@@ -17,7 +17,7 @@ app.use(async (ctx, next) => {
 });
 
 app.use(async (ctx, next) => {
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  await new Promise(resolve => setTimeout(resolve, 1000));
   await next();
 });
 
@@ -31,11 +31,12 @@ app.use(async (ctx, next) => {
 });
 
 class Book {
-  constructor({ id, title, date, library}) {
+  constructor({ id, title, date, library, isAvailable}) {
     this.id = id;
     this.title = title;
-    this.date = date
-    this.library = library
+    this.date = date;
+    this.library = library;
+    this.isAvailable = isAvailable;
   }
 }
 
@@ -45,7 +46,9 @@ for (let i = 0; i < 3; i++) {
     id: `${i}`,
     title: `book ${i}`,
     date: new Date(Date.now() + i),
-    library: `library ${i}` }));
+    library: `library ${i}`,
+    isAvailable: false
+  }));
 }
 let lastUpdated = books[books.length - 1].date;
 let lastId = books[books.length - 1].id;
@@ -69,10 +72,10 @@ router.get('/book', ctx => {
   const text = ctx.request.query.text;
   const page = parseInt(ctx.request.query.page) || 1;
   ctx.response.set('Last-Modified', lastUpdated.toUTCString());
-  const sortedItems = books
-    .filter(book => text ? book.text.indexOf(text) !== -1 : true)
-    .sort((n1, n2) => -(n1.date.getTime() - n2.date.getTime()));
-  const offset = (page - 1) * pageSize;
+  // const sortedItems = books
+  //   .filter(book => text ? book.text.indexOf(text) !== -1 : true)
+  //   .sort((n1, n2) => -(n1.date.getTime() - n2.date.getTime()));
+  // const offset = (page - 1) * pageSize;
   // ctx.response.body = {
   //   page,
   //   books: sortedItems.slice(offset, offset + pageSize),
@@ -153,9 +156,8 @@ router.del('/book/:id', ctx => {
   const id = ctx.params.id;
   const index = books.findIndex(book => id === book.id);
   if (index !== -1) {
-    const book = books[index];
+    const book = books[index]
     books.splice(index, 1);
-    lastUpdated = new Date();
     broadcast({ event: 'deleted', payload: { book: book } });
   }
   ctx.response.status = 204; // no content
@@ -164,11 +166,10 @@ router.del('/book/:id', ctx => {
 setInterval(() => {
   lastUpdated = new Date();
   lastId = `${parseInt(lastId) + 1}`;
-  const book = new Book({ id: lastId, title: `book ${lastId}`, date: lastUpdated, library: `library ${lastId}` });
+  const book = new Book({ id: lastId, title: `book ${lastId}`, date: lastUpdated, library: `library ${lastId}`, isAvailable: true });
   books.push(book);
-  console.log(`test: ${book.title}`);
   broadcast({ event: 'created', payload: { book } });
-}, 120000);
+}, 60000);
 
 app.use(router.routes());
 app.use(router.allowedMethods());

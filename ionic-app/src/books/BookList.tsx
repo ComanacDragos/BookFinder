@@ -1,11 +1,12 @@
 import React, { useContext } from 'react';
 import { RouteComponentProps } from 'react-router';
 import {
+    IonButton,
     IonContent,
     IonFab,
     IonFabButton,
     IonHeader,
-    IonIcon,
+    IonIcon, IonItem, IonLabel,
     IonList, IonLoading,
     IonPage,
     IonTitle,
@@ -32,8 +33,20 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                 <IonLoading isOpen={fetching} message="Fetching books" />
                 {books && (
                     <IonList>
-                        {books.map(({ id, title}) =>
-                            <Book key={id} id={id} title={title} onEdit={id => history.push(`/book/${id}`)} />)}
+                        <IonItem>
+                            <IonLabel>Title</IonLabel>
+                            <IonLabel>Library</IonLabel>
+                            <IonLabel>Last modified</IonLabel>
+                            <IonLabel>Is available</IonLabel>
+                        </IonItem>
+                        {books.map((props) =>
+                            <Book key={props.id}
+                                  id={props.id}
+                                  title={props.title}
+                                  library={props.library}
+                                  date={props.date}
+                                  isAvailable={props.isAvailable}
+                                  onEdit={id => history.push(`/book/${id}`)} />)}
                     </IonList>
                 )}
                 {fetchingError && (

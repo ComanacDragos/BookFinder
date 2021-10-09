@@ -1,10 +1,10 @@
 import React, { useContext, useEffect, useState } from 'react';
 import {
     IonButton,
-    IonButtons,
+    IonButtons, IonCheckbox,
     IonContent,
     IonHeader,
-    IonInput,
+    IonInput, IonItem, IonLabel,
     IonLoading,
     IonPage,
     IonTitle,
@@ -22,8 +22,12 @@ interface BookEditProps extends RouteComponentProps<{
 }> {}
 
 const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
-    const { books, saving, savingError, saveBook } = useContext(BookContext);
-    const [text, setText] = useState('');
+    const { books, saving, savingError, saveBook, deleteBook, deleteError, deleting } = useContext(BookContext);
+    //const [text, setText] = useState('');
+    const [title, setTitle] = useState('');
+    const [library, setLibrary] = useState('');
+    const [isAvailable, setIsAvailable] = useState(true);
+
     const [book, setBook] = useState<BookProps>();
     useEffect(() => {
         log('useEffect');
@@ -31,13 +35,21 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
         const book = books?.find(it => it.id === routeId);
         setBook(book);
         if (book) {
-            setText(book.title);
+            setTitle(book.title);
+            setLibrary(book.library)
+            setIsAvailable(book.isAvailable)
         }
     }, [match.params.id, books]);
     const handleSave = () => {
-        const editedBook = book ? { ...book, title:text } : { title:text };
+        const editedBook = book ? { ...book, title:title, library: library, isAvailable: isAvailable, date: new Date(Date.now()) }
+            : { title:title, library: library, isAvailable: isAvailable, date: new Date(Date.now()) };
         saveBook && saveBook(editedBook).then(() => history.goBack());
     };
+
+    const handleDelete = ()=>{
+        log(`delete ${match.params.id}`)
+        deleteBook && deleteBook(match.params.id || '-1').then(() => history.goBack());
+    }
     log('render');
     return (
         <IonPage>
@@ -45,6 +57,9 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
                 <IonToolbar>
                     <IonTitle>Edit</IonTitle>
                     <IonButtons slot="end">
+                        <IonButton onClick={handleDelete}>
+                            Delete
+                        </IonButton>
                         <IonButton onClick={handleSave}>
                             Save
                         </IonButton>
@@ -52,11 +67,25 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
                 </IonToolbar>
             </IonHeader>
             <IonContent>
-                <IonInput value={text} onIonChange={e => setText(e.detail.value || '')} />
-                <IonLoading isOpen={saving} />
+                <IonItem>
+                    <IonLabel>Title:</IonLabel>
+                    <IonInput value={title} onIonChange={e => setTitle(e.detail.value || '')} />
+                </IonItem>
+                <IonItem>
+                    <IonLabel>Library:</IonLabel>
+                    <IonInput value={library} onIonChange={e => setLibrary(e.detail.value || '')} />
+                </IonItem>
+                <IonItem>
+                    <IonLabel>Is available </IonLabel>
+                    <IonCheckbox class="ion-text-wrap" checked={isAvailable} onIonChange={e => setIsAvailable(e.detail.checked || false)} />
+                </IonItem>
+                <IonLoading isOpen={saving || deleting} />
                 {savingError && (
                     <div>{savingError.message || 'Failed to save item'}</div>
                 )}
+                {
+                    deleteError && (<div>{deleteError.message || 'Failed to delete'}</div>)
+                }
             </IonContent>
         </IonPage>
     );

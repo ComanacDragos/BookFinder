@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useReducer } from 'react';
 import PropTypes from 'prop-types';
 import { getLogger } from '../core';
 import { BookProps } from './BookProps';
-import { createBook, getBooks, newWebSocket, updateBook } from './bookApi';
+import { createBook, getBooks, newWebSocket, updateBook, deleteBook } from './bookApi';
+
 
 const log = getLogger('BookProvider');
 
-type SaveBookFn = (item: BookProps) => Promise<any>;
+type SaveBookFn = (book: BookProps) => Promise<any>;
+type DeleteBookFn = (bookId: string) => Promise<any>;
 
 export interface BooksState {
     books?: BookProps[],
@@ -14,7 +16,12 @@ export interface BooksState {
     fetchingError?: Error | null,
     saving: boolean,
     savingError?: Error | null,
+
+    deleting: boolean,
+    deleteError?: Error | null,
+
     saveBook?: SaveBookFn,
+    deleteBook?: DeleteBookFn
 }
 
 interface ActionProps {
@@ -25,14 +32,21 @@ interface ActionProps {
 const initialState: BooksState = {
     fetching: false,
     saving: false,
+    deleting: false
 };
 
 const FETCH_BOOKS_STARTED = 'FETCH_BOOKS_STARTED';
 const FETCH_BOOKS_SUCCEEDED = 'FETCH_BOOKS_SUCCEEDED';
 const FETCH_BOOKS_FAILED = 'FETCH_BOOKS_FAILED';
+
 const SAVE_BOOK_STARTED = 'SAVE_BOOK_STARTED';
 const SAVE_BOOK_SUCCEEDED = 'SAVE_BOOK_SUCCEEDED';
 const SAVE_BOOK_FAILED = 'SAVE_BOOK_FAILED';
+
+const DELETE_BOOK_STARTED = 'DELETE_BOOK_STARTED';
+const DELETE_BOOK_SUCCEEDED = 'DELETE_BOOK_SUCCEEDED';
+const DELETE_BOOK_FAILED = 'DELETE_BOOK_FAILED';
+
 
 const reducer: (state: BooksState, action: ActionProps) => BooksState =
     (state, { type, payload }) => {
@@ -46,7 +60,7 @@ const reducer: (state: BooksState, action: ActionProps) => BooksState =
             case SAVE_BOOK_STARTED:
                 return { ...state, savingError: null, saving: true };
             case SAVE_BOOK_SUCCEEDED:
-                const books = [...(state.books || [])];
+                let books = [...(state.books || [])];
                 const book = payload.book;
                 const index = books.findIndex(it => it.id === book.id);
                 if (index === -1) {
@@ -57,6 +71,16 @@ const reducer: (state: BooksState, action: ActionProps) => BooksState =
                 return { ...state, books: books, saving: false };
             case SAVE_BOOK_FAILED:
                 return { ...state, savingError: payload.error, saving: false };
+            case DELETE_BOOK_STARTED:
+                return {...state, deleteError: null, deleting: true}
+            case DELETE_BOOK_SUCCEEDED:
+                const deleteIndex = (state.books || []).findIndex(book => payload.bookId === book.id);
+                if (deleteIndex !== -1 && state.books) {
+                    state.books.splice(deleteIndex, 1);
+                }
+                return {...state, deleting: false};
+            case DELETE_BOOK_FAILED:
+                return {...state, deleteError: payload.error, deleting: false}
             default:
                 return state;
         }
@@ -70,11 +94,12 @@ interface BookProviderProps {
 
 export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
     const [state, dispatch] = useReducer(reducer, initialState);
-    const { books, fetching, fetchingError, saving, savingError } = state;
+    const { books, fetching, fetchingError, saving, savingError, deleting, deleteError } = state;
     useEffect(getBooksEffect, []);
     useEffect(wsEffect, []);
     const saveBook = useCallback<SaveBookFn>(saveBookCallback, []);
-    const value = { books, fetching, fetchingError, saving, savingError, saveBook: saveBook };
+    const delBook = useCallback<DeleteBookFn>(deleteBookCallBack, [])
+    const value = { books, fetching, fetchingError, saving, savingError, deleting, deleteError, saveBook: saveBook, deleteBook: delBook };
     log('returns');
     return (
         <BookContext.Provider value={value}>
@@ -118,6 +143,18 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
         }
     }
 
+    async function deleteBookCallBack(bookId: string){
+        try{
+            log("deleteBook started")
+            dispatch({type: DELETE_BOOK_STARTED})
+            await deleteBook(bookId);
+            dispatch({type: DELETE_BOOK_SUCCEEDED, payload: {bookId: bookId}})
+        }catch (error){
+            log('deleteBook failed');
+            dispatch({ type: SAVE_BOOK_FAILED, payload: { error } });
+        }
+    }
+
     function wsEffect() {
         let canceled = false;
         log('wsEffect - connecting');
@@ -125,10 +162,13 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
             if (canceled) {
                 return;
             }
-            const { event, payload: { book }} = message;
+            const { event, payload: {book}} = message;
             log(`ws message, book ${event} -- ${book.title}`);
             if (event === 'created' || event === 'updated') {
-                dispatch({ type: SAVE_BOOK_SUCCEEDED, payload: { book:book } });
+                dispatch({ type: SAVE_BOOK_SUCCEEDED, payload: { book: book } });
+            }
+            if(event === 'deleted'){
+                dispatch({type: DELETE_BOOK_SUCCEEDED, payload: {bookId: book.id}})
             }
         });
         return () => {

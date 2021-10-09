@@ -35,12 +35,16 @@ export const getBooks: () => Promise<BookProps[]> = () => {
     return withLogs(axios.get(bookUrl, config), 'getBooks');
 }
 
-export const createBook: (item: BookProps) => Promise<BookProps[]> = item => {
-    return withLogs(axios.post(bookUrl, item, config), 'createBook');
+export const createBook: (book: BookProps) => Promise<BookProps[]> = book => {
+    return withLogs(axios.post(bookUrl, book, config), 'createBook');
 }
 
-export const updateBook: (item: BookProps) => Promise<BookProps[]> = item => {
-    return withLogs(axios.put(`${bookUrl}/${item.id}`, item, config), 'updateBook');
+export const updateBook: (book: BookProps) => Promise<BookProps[]> = book => {
+    return withLogs(axios.put(`${bookUrl}/${book.id}`, book, config), 'updateBook');
+}
+
+export const deleteBook: (bookId: string) => Promise<BookProps[]> = bookId => {
+    return withLogs(axios.delete(`${bookUrl}/${bookId}`, config), 'deleteBook');
 }
 
 interface MessageData {
