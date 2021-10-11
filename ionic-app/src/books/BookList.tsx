@@ -33,19 +33,15 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                 <IonLoading isOpen={fetching} message="Fetching books" />
                 {books && (
                     <IonList>
-                        <IonItem>
-                            <IonLabel>Title</IonLabel>
-                            <IonLabel>Library</IonLabel>
-                            <IonLabel>Last modified</IonLabel>
-                            <IonLabel>Is available</IonLabel>
-                        </IonItem>
                         {books.map((props) =>
                             <Book key={props.id}
                                   id={props.id}
                                   title={props.title}
                                   library={props.library}
                                   date={props.date}
+                                  dueDate={props.dueDate}
                                   isAvailable={props.isAvailable}
+                                  pages={props.pages}
                                   onEdit={id => history.push(`/book/${id}`)} />)}
                     </IonList>
                 )}

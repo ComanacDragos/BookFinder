@@ -31,12 +31,14 @@ app.use(async (ctx, next) => {
 });
 
 class Book {
-  constructor({ id, title, date, library, isAvailable}) {
+  constructor({ id, title, date, dueDate, library, isAvailable, pages}) {
     this.id = id;
     this.title = title;
     this.date = date;
+    this.dueDate = dueDate;
     this.library = library;
     this.isAvailable = isAvailable;
+    this.pages = pages
   }
 }
 
@@ -46,8 +48,10 @@ for (let i = 0; i < 3; i++) {
     id: `${i}`,
     title: `book ${i}`,
     date: new Date(Date.now() + i),
+    dueDate: new Date(Date.now() + i),
     library: `library ${i}`,
-    isAvailable: false
+    isAvailable: false,
+    pages: Math.floor(Math.random() * 1000) + 50
   }));
 }
 let lastUpdated = books[books.length - 1].date;
@@ -107,7 +111,6 @@ const createBook = async (ctx) => {
   book.id = `${parseInt(lastId) + 1}`;
   lastId = book.id;
   book.date = new Date();
-  book.version = 1;
   books.push(book);
   ctx.response.body = book;
   ctx.response.status = 201; // CREATED
@@ -166,7 +169,15 @@ router.del('/book/:id', ctx => {
 setInterval(() => {
   lastUpdated = new Date();
   lastId = `${parseInt(lastId) + 1}`;
-  const book = new Book({ id: lastId, title: `book ${lastId}`, date: lastUpdated, library: `library ${lastId}`, isAvailable: true });
+  const book = new Book(
+      {
+        id: lastId,
+        title: `book ${lastId}`,
+        dueDate: new Date(Date.now()),
+        pages: Math.floor(Math.random() * 1000) + 50,
+        date: lastUpdated,
+        library: `library ${lastId}`,
+        isAvailable: true });
   books.push(book);
   broadcast({ event: 'created', payload: { book } });
 }, 60000);

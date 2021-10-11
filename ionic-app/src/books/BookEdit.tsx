@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import {
     IonButton,
     IonButtons, IonCheckbox,
-    IonContent,
+    IonContent, IonDatetime,
     IonHeader,
     IonInput, IonItem, IonLabel,
     IonLoading,
@@ -27,6 +27,8 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
     const [title, setTitle] = useState('');
     const [library, setLibrary] = useState('');
     const [isAvailable, setIsAvailable] = useState(true);
+    const [pages, setPages] = useState(0);
+    const [dueDate, setDueDate] = useState(new Date(Date.now()))
 
     const [book, setBook] = useState<BookProps>();
     useEffect(() => {
@@ -36,13 +38,28 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
         setBook(book);
         if (book) {
             setTitle(book.title);
-            setLibrary(book.library)
-            setIsAvailable(book.isAvailable)
+            setLibrary(book.library);
+            setIsAvailable(book.isAvailable);
+            setPages(book.pages);
+            setDueDate(book.dueDate);
         }
     }, [match.params.id, books]);
     const handleSave = () => {
-        const editedBook = book ? { ...book, title:title, library: library, isAvailable: isAvailable, date: new Date(Date.now()) }
-            : { title:title, library: library, isAvailable: isAvailable, date: new Date(Date.now()) };
+        const editedBook = book ?
+            { ...book,
+                title:title,
+                library: library,
+                isAvailable: isAvailable,
+                dueDate: dueDate,
+                pages: pages
+            }
+            : { title:title,
+                library: library,
+                isAvailable: isAvailable,
+                date: new Date(Date.now()),
+                dueDate: dueDate,
+                pages: pages
+        };
         saveBook && saveBook(editedBook).then(() => history.goBack());
     };
 
@@ -79,6 +96,16 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
                     <IonLabel>Is available </IonLabel>
                     <IonCheckbox class="ion-text-wrap" checked={isAvailable} onIonChange={e => setIsAvailable(e.detail.checked || false)} />
                 </IonItem>
+                <IonItem>
+                    <IonLabel>Pages:</IonLabel>
+                    <IonInput type='number' value={pages} onIonChange={e => setPages(parseInt(e.detail.value || '0') )} />
+                </IonItem>
+                <IonItem>
+                    <IonLabel>Due Date:</IonLabel>
+                    <IonDatetime max="2222-10-31" value={new Date(dueDate).toDateString()} onIonChange={e =>
+                        setDueDate(new Date(Date.parse(e.detail.value || new Date(Date.now()).toDateString())))} />
+                </IonItem>
+
                 <IonLoading isOpen={saving || deleting} />
                 {savingError && (
                     <div>{savingError.message || 'Failed to save item'}</div>
