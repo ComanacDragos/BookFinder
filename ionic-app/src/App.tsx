@@ -22,19 +22,23 @@ import '@ionic/react/css/display.css';
 import './theme/variables.css';
 import {BookEdit, BookList} from "./books";
 import {BookProvider} from "./books/BookProvider";
+import {AuthProvider, Login, PrivateRoute} from "./auth";
 
 const App: React.FC = () => (
   <IonApp>
-      <BookProvider>
-          <IonReactRouter>
-              <IonRouterOutlet>
-                  <Route path="/books" component={BookList} exact={true} />
-                  <Route path="/book" component={BookEdit} exact={true} />
-                  <Route path="/book/:id" component={BookEdit} exact={true} />
-                  <Route exact path="/" render={() => <Redirect to="/books" />} />
-              </IonRouterOutlet>
-          </IonReactRouter>
-      </BookProvider>
+      <IonReactRouter>
+          <IonRouterOutlet>
+              <AuthProvider>
+                  <Route path="/login" component={Login} exact={true}/>
+                  <BookProvider>
+                      <PrivateRoute path="/books" component={BookList} exact={true} />
+                      <PrivateRoute path="/book" component={BookEdit} exact={true} />
+                      <PrivateRoute path="/book/:id" component={BookEdit} exact={true} />
+                  </BookProvider>
+                  <Route exact path="/" render={() => <Redirect to="/books"/>}/>
+              </AuthProvider>
+          </IonRouterOutlet>
+      </IonReactRouter>
   </IonApp>
 );
 

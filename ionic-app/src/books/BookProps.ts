@@ -1,5 +1,5 @@
 export interface BookProps {
-  id?: string;
+  _id?: string;
   title: string;
   dueDate: Date;
   date: Date;

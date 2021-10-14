@@ -34,7 +34,7 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
     useEffect(() => {
         log('useEffect');
         const routeId = match.params.id || '';
-        const book = books?.find(it => it.id === routeId);
+        const book = books?.find(it => it._id === routeId);
         setBook(book);
         if (book) {
             setTitle(book.title);

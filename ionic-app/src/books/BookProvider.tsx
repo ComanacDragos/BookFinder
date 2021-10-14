@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useReducer } from 'react';
+import React, { useCallback, useContext, useEffect, useReducer } from 'react';
 import PropTypes from 'prop-types';
 import { getLogger } from '../core';
 import { BookProps } from './BookProps';
 import { createBook, getBooks, newWebSocket, updateBook, deleteBook } from './bookApi';
-
+import { AuthContext } from '../auth';
 
 const log = getLogger('BookProvider');
 
@@ -62,7 +62,7 @@ const reducer: (state: BooksState, action: ActionProps) => BooksState =
             case SAVE_BOOK_SUCCEEDED:
                 let books = [...(state.books || [])];
                 const book = payload.book;
-                const index = books.findIndex(it => it.id === book.id);
+                const index = books.findIndex(it => it._id === book._id);
                 if (index === -1) {
                     books.splice(0, 0, book);
                 } else {
@@ -74,7 +74,7 @@ const reducer: (state: BooksState, action: ActionProps) => BooksState =
             case DELETE_BOOK_STARTED:
                 return {...state, deleteError: null, deleting: true}
             case DELETE_BOOK_SUCCEEDED:
-                const deleteIndex = (state.books || []).findIndex(book => payload.bookId === book.id);
+                const deleteIndex = (state.books || []).findIndex(book => payload.bookId === book._id);
                 if (deleteIndex !== -1 && state.books) {
                     state.books.splice(deleteIndex, 1);
                 }
@@ -93,12 +93,13 @@ interface BookProviderProps {
 }
 
 export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
+    const { token } = useContext(AuthContext);
     const [state, dispatch] = useReducer(reducer, initialState);
     const { books, fetching, fetchingError, saving, savingError, deleting, deleteError } = state;
-    useEffect(getBooksEffect, []);
-    useEffect(wsEffect, []);
-    const saveBook = useCallback<SaveBookFn>(saveBookCallback, []);
-    const delBook = useCallback<DeleteBookFn>(deleteBookCallBack, [])
+    useEffect(getBooksEffect, [token]);
+    useEffect(wsEffect, [token]);
+    const saveBook = useCallback<SaveBookFn>(saveBookCallback, [token]);
+    const delBook = useCallback<DeleteBookFn>(deleteBookCallBack, [token])
     const value = { books, fetching, fetchingError, saving, savingError, deleting, deleteError, saveBook: saveBook, deleteBook: delBook };
     log('returns');
     return (
@@ -115,10 +116,13 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
         }
 
         async function fetchBooks() {
+            if (!token?.trim()) {
+                return;
+            }
             try {
                 log('fetchBooks started');
                 dispatch({ type: FETCH_BOOKS_STARTED });
-                const books = await getBooks();
+                const books = await getBooks(token);
                 log('fetchBooks succeeded');
                 if (!canceled) {
                     dispatch({ type: FETCH_BOOKS_SUCCEEDED, payload: { books: books } });
@@ -134,7 +138,7 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
         try {
             log('saveBook started');
             dispatch({ type: SAVE_BOOK_STARTED });
-            const savedBook = await (book.id ? updateBook(book) : createBook(book));
+            const savedBook = await (book._id ? updateBook(token, book) : createBook(token, book));
             log('saveBook succeeded');
             dispatch({ type: SAVE_BOOK_SUCCEEDED, payload: { book: savedBook } });
         } catch (error) {
@@ -147,7 +151,7 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
         try{
             log("deleteBook started")
             dispatch({type: DELETE_BOOK_STARTED})
-            await deleteBook(bookId);
+            await deleteBook(token, bookId);
             dispatch({type: DELETE_BOOK_SUCCEEDED, payload: {bookId: bookId}})
         }catch (error){
             log('deleteBook failed');
@@ -158,23 +162,27 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
     function wsEffect() {
         let canceled = false;
         log('wsEffect - connecting');
-        const closeWebSocket = newWebSocket(message => {
-            if (canceled) {
-                return;
+        let closeWebSocket: () => void;
+        if(token?.trim()){
+            closeWebSocket = newWebSocket(token,message => {
+                if (canceled) {
+                    return;
+                }
+                const { event, payload: book} = message;
+                log(`ws message, book ${event} -- ${book.title}`);
+                if (event === 'created' || event === 'updated') {
+                    dispatch({ type: SAVE_BOOK_SUCCEEDED, payload: { book: book } });
+                }
+                if(event === 'deleted'){
+                    dispatch({type: DELETE_BOOK_SUCCEEDED, payload: {bookId: book._id}})
+                }
+            });
+            return () => {
+                log('wsEffect - disconnecting');
+                canceled = true;
+                closeWebSocket();
             }
-            const { event, payload: {book}} = message;
-            log(`ws message, book ${event} -- ${book.title}`);
-            if (event === 'created' || event === 'updated') {
-                dispatch({ type: SAVE_BOOK_SUCCEEDED, payload: { book: book } });
-            }
-            if(event === 'deleted'){
-                dispatch({type: DELETE_BOOK_SUCCEEDED, payload: {bookId: book.id}})
-            }
-        });
-        return () => {
-            log('wsEffect - disconnecting');
-            canceled = true;
-            closeWebSocket();
         }
+
     }
 };

@@ -34,8 +34,8 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                 {books && (
                     <IonList>
                         {books.map((props) =>
-                            <Book key={props.id}
-                                  id={props.id}
+                            <Book key={props._id}
+                                  _id={props._id}
                                   title={props.title}
                                   library={props.library}
                                   date={props.date}

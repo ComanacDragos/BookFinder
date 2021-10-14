@@ -9,7 +9,7 @@ interface BookPropsExt extends BookProps {
 
 const Book: React.FC<BookPropsExt> = (props) => {
     return (
-        <IonItem onClick={() => props.onEdit(props.id)}>
+        <IonItem onClick={() => props.onEdit(props._id)}>
            <div style={{
                "borderWidth": 3,
                "borderStyle": "groove",
