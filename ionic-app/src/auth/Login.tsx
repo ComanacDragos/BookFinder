@@ -13,7 +13,7 @@ interface LoginState {
 }
 
 export const Login: React.FC<RouteComponentProps> = ({ history }) => {
-    const { isAuthenticated, isAuthenticating, login, authenticationError } = useContext(AuthContext);
+    const { isAuthenticated, isAuthenticating, login, authenticationError, pendingSignup } = useContext(AuthContext);
     const [state, setState] = useState<LoginState>({});
     const { username, password } = state;
     const handleLogin = () => {
@@ -32,25 +32,30 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
                 </IonToolbar>
             </IonHeader>
             <IonContent>
-                <IonInput
-                    placeholder="Username"
-                    value={username}
-                    onIonChange={e => setState({
-                        ...state,
-                        username: e.detail.value || ''
-                    })}/>
-                <IonInput
-                    placeholder="Password"
-                    value={password}
-                    onIonChange={e => setState({
-                        ...state,
-                        password: e.detail.value || ''
-                    })}/>
-                <IonLoading isOpen={isAuthenticating}/>
+                <div className="column">
+                    <IonInput class="input"
+                        placeholder="Username"
+                        value={username}
+                        onIonChange={e => setState({
+                            ...state,
+                            username: e.detail.value || ''
+                        })}/>
+                    <IonInput class="input"
+                        placeholder="Password"
+                        type="password"
+                        value={password}
+                        onIonChange={e => setState({
+                            ...state,
+                            password: e.detail.value || ''
+                        })}/>
+                    <IonLoading isOpen={isAuthenticating}/>
+
+                    <IonButton onClick={handleLogin}>Login</IonButton>
+                    <IonButton onClick={()=> history.push("/signup")}>Signup</IonButton>
+                </div>
                 {authenticationError && (
-                    <div>{authenticationError.message || 'Failed to authenticate'}</div>
+                    <div>{authenticationError || 'Failed to authenticate'}</div>
                 )}
-                <IonButton onClick={handleLogin}>Login</IonButton>
             </IonContent>
         </IonPage>
     );

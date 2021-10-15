@@ -10,22 +10,8 @@ interface BookPropsExt extends BookProps {
 const Book: React.FC<BookPropsExt> = (props) => {
     return (
         <IonItem onClick={() => props.onEdit(props._id)}>
-           <div style={{
-               "borderWidth": 3,
-               "borderStyle": "groove",
-               "borderColor": "white",
-               "width": '90%',
-               "margin": "10px auto",
-               "padding": "5px",
-               "textAlign": "center"
-           }}>
-               <div style={{
-                   "display": "flex",
-                   "columnGap": "5%",
-                   "width": '80%',
-                   "margin": "10px auto",
-                   "justifyContent": 'center'
-               }}>
+           <div className="book">
+               <div className="row">
                    <IonLabel>{props.title}</IonLabel>
                    <IonLabel>
                        {

@@ -234,3 +234,41 @@ http://ionicframework.com/docs/theming/ */
     --ion-card-background: #1e1e1e;
   }
 }
+.no-scroll {
+  --overflow: hidden;
+}
+
+div{
+  text-align: center;
+}
+
+.column{
+  display: flex;
+  flex-direction: column;
+  row-gap: 10px;
+  width: 80%;
+  margin: 10px auto;
+  justify-content: center;
+}
+
+.row{
+  display: flex;
+  column-gap: 5%;
+  width: 80%;
+  margin: 10px auto;
+  justify-content: center
+}
+
+.input{
+  border-style: groove;
+}
+
+.book{
+  border-width: 3;
+  border-style: groove;
+  border-color: white;
+  width: 90%;
+  margin: 10px auto;
+  padding: 5px;
+  text-align: center;
+}

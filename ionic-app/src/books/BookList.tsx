@@ -16,11 +16,13 @@ import { add } from 'ionicons/icons';
 import Book from './Book';
 import { getLogger } from '../core';
 import { BookContext } from './BookProvider';
+import {AuthContext} from "../auth";
 
 const log = getLogger('BookList');
 
 const BookList: React.FC<RouteComponentProps> = ({ history }) => {
     const { books, fetching, fetchingError } = useContext(BookContext);
+    const {logout} = useContext(AuthContext);
     log('render');
     return (
         <IonPage>
@@ -48,6 +50,9 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                 {fetchingError && (
                     <div>{fetchingError.message || 'Failed to fetch books'}</div>
                 )}
+                <IonFab vertical="bottom" horizontal="start" slot="fixed">
+                    <IonButton onClick={()=>logout && logout()}>Logout</IonButton>
+                </IonFab>
                 <IonFab vertical="bottom" horizontal="end" slot="fixed">
                     <IonFabButton onClick={() => history.push('/book')}>
                         <IonIcon icon={add} />
