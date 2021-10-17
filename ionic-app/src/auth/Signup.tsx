@@ -4,6 +4,7 @@ import { RouteComponentProps } from 'react-router';
 import { IonButton, IonContent, IonHeader, IonInput, IonLoading, IonPage, IonTitle, IonToolbar } from '@ionic/react';
 import { AuthContext } from './AuthProvider';
 import { getLogger } from '../core';
+import {NetworkStatus} from "../networkStatus";
 
 const log = getLogger('Signup');
 
@@ -14,7 +15,7 @@ interface SignupState {
 }
 
 export const Signup: React.FC<RouteComponentProps> = ({ history }) => {
-    const { isAuthenticated, signupInProcess, signup, signupError } = useContext(AuthContext);
+    const { isAuthenticated, signupInProcess, signup, signupError, clearError } = useContext(AuthContext);
     const [state, setState] = useState<SignupState>({});
     const {username, password, confirmPassword} = state;
     const handleSignup = () =>{
@@ -27,6 +28,7 @@ export const Signup: React.FC<RouteComponentProps> = ({ history }) => {
     }
     return (
         <IonPage>
+            <NetworkStatus/>
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>Signup</IonTitle>
@@ -63,7 +65,7 @@ export const Signup: React.FC<RouteComponentProps> = ({ history }) => {
                     <IonLoading isOpen={signupInProcess}/>
 
                     <IonButton onClick={handleSignup}>Signup</IonButton>
-                    <IonButton onClick={()=> history.push("/login")}>Back</IonButton>
+                    <IonButton onClick={()=>clearError(()=> history.push("/login"))}>Back</IonButton>
 
                     {signupError && (
                         <div>{signupError || 'Failed to signup'}</div>

@@ -14,6 +14,7 @@ import { getLogger } from '../core';
 import { BookContext } from './BookProvider';
 import { RouteComponentProps } from 'react-router';
 import { BookProps } from './BookProps';
+import {NetworkStatus} from "../networkStatus";
 
 const log = getLogger('BookEdit');
 
@@ -70,6 +71,7 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
     log('render');
     return (
         <IonPage>
+            <NetworkStatus/>
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>Edit</IonTitle>

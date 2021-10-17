@@ -1,9 +1,21 @@
 import React, { useContext, useState } from 'react';
 import { Redirect } from 'react-router-dom';
 import { RouteComponentProps } from 'react-router';
-import { IonButton, IonContent, IonHeader, IonInput, IonLoading, IonPage, IonTitle, IonToolbar } from '@ionic/react';
+import {
+    IonButton,
+    IonContent,
+    IonHeader,
+    IonIcon,
+    IonInput,
+    IonLoading,
+    IonPage,
+    IonTitle,
+    IonToolbar,
+    IonFab
+} from '@ionic/react';
 import { AuthContext } from './AuthProvider';
 import { getLogger } from '../core';
+import {NetworkStatus, useNetwork} from "../networkStatus";
 
 const log = getLogger('Login');
 
@@ -13,9 +25,10 @@ interface LoginState {
 }
 
 export const Login: React.FC<RouteComponentProps> = ({ history }) => {
-    const { isAuthenticated, isAuthenticating, login, authenticationError, pendingSignup } = useContext(AuthContext);
+    const { isAuthenticated, isAuthenticating, login, authenticationError, clearError } = useContext(AuthContext);
     const [state, setState] = useState<LoginState>({});
     const { username, password } = state;
+
     const handleLogin = () => {
         log('handleLogin...');
         login?.(username, password);
@@ -26,6 +39,7 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
     }
     return (
         <IonPage>
+            <NetworkStatus/>
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>Login</IonTitle>
@@ -51,7 +65,7 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
                     <IonLoading isOpen={isAuthenticating}/>
 
                     <IonButton onClick={handleLogin}>Login</IonButton>
-                    <IonButton onClick={()=> history.push("/signup")}>Signup</IonButton>
+                    <IonButton onClick={()=> clearError(()=> history.push("/signup"))}>Signup</IonButton>
                 </div>
                 {authenticationError && (
                     <div>{authenticationError || 'Failed to authenticate'}</div>

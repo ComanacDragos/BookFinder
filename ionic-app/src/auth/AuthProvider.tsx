@@ -2,12 +2,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { getLogger } from '../core';
 import { signup as signupApi, login as loginApi } from './authApi';
+import {LocationState} from "@ionic/react-router/dist/types/ReactRouter/IonRouter";
 
 const log = getLogger('AuthProvider');
 
 type LoginFn = (username?: string, password?: string) => void;
 type LogoutFn = ()=> void;
 type SignupFn = (username?: string, password?: string, confirmPassword?: string) => void;
+type ClearErrorFn = (callback:()=>void)=>void;
 
 export interface AuthState {
     authenticationError: Error | null;
@@ -18,6 +20,7 @@ export interface AuthState {
     login?: LoginFn;
     logout?: LogoutFn;
     signup?: SignupFn;
+    clearError: ClearErrorFn;
     pendingAuthentication?: boolean;
     pendingSignup?: boolean;
     username?: string;
@@ -35,6 +38,10 @@ const initialState: AuthState = {
     pendingAuthentication: false,
     pendingSignup: false,
     token: '',
+    username: '',
+    password: '',
+    confirmPassword: '',
+    clearError: ()=>{}
 };
 
 export const AuthContext = React.createContext<AuthState>(initialState);
@@ -49,15 +56,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const login = useCallback<LoginFn>(loginCallback, []);
     const logout = useCallback<LogoutFn>(logoutCallback, []);
     const signup = useCallback<SignupFn>(signupCallback, [])
+    const clearError = useCallback<ClearErrorFn>(clearErrorsCallback, []);
     useEffect(authenticationEffect, [pendingAuthentication]);
     useEffect(signupEffect, [pendingSignup]);
-    const value = { isAuthenticated, login, logout, signup, isAuthenticating, signupInProcess, pendingSignup, authenticationError, signupError, token };
+    const value = { isAuthenticated, login, logout, signup, clearError, isAuthenticating, signupInProcess, pendingSignup, authenticationError, signupError, token };
     log('render');
     return (
         <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );
+
+    function clearErrorsCallback(callback: ()=>void){
+        setState({...state, authenticationError: null, signupError: null})
+        callback()
+    }
 
     function signupCallback(username?: string, password?: string, confirmPassword?: string){
         log('signup')
@@ -92,6 +105,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     ...state,
                     signupInProcess: true,
                 });
+                console.log(state)
                 const { username, password, confirmPassword } = state;
                 const { token } = await signupApi(username, password, confirmPassword);
                 if (canceled) {

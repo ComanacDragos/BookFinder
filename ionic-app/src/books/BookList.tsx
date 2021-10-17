@@ -17,6 +17,7 @@ import Book from './Book';
 import { getLogger } from '../core';
 import { BookContext } from './BookProvider';
 import {AuthContext} from "../auth";
+import {NetworkStatus} from "../networkStatus";
 
 const log = getLogger('BookList');
 
@@ -26,6 +27,7 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
     log('render');
     return (
         <IonPage>
+            <NetworkStatus/>
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>Libraries</IonTitle>
