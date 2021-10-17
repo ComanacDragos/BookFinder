@@ -15,6 +15,7 @@ import { BookContext } from './BookProvider';
 import { RouteComponentProps } from 'react-router';
 import { BookProps } from './BookProps';
 import {NetworkStatus} from "../networkStatus";
+import {NetworkStatusContext} from "../networkStatus/NetworkStatusProvider";
 
 const log = getLogger('BookEdit');
 
@@ -24,6 +25,8 @@ interface BookEditProps extends RouteComponentProps<{
 
 const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
     const { books, saving, savingError, saveBook, deleteBook, deleteError, deleting } = useContext(BookContext);
+    const {connected} = useContext(NetworkStatusContext);
+
     //const [text, setText] = useState('');
     const [title, setTitle] = useState('');
     const [library, setLibrary] = useState('');
@@ -61,7 +64,8 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
                 dueDate: dueDate,
                 pages: pages
         };
-        saveBook && saveBook(editedBook).then(() => history.goBack());
+
+        saveBook && saveBook(editedBook, connected).then(() => history.goBack());
     };
 
     const handleDelete = ()=>{
@@ -109,12 +113,6 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
                 </IonItem>
 
                 <IonLoading isOpen={saving || deleting} />
-                {savingError && (
-                    <div>{savingError.message || 'Failed to save item'}</div>
-                )}
-                {
-                    deleteError && (<div>{deleteError.message || 'Failed to delete'}</div>)
-                }
             </IonContent>
         </IonPage>
     );

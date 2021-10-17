@@ -1,13 +1,13 @@
-import React from "react";
+import React, {useContext} from "react";
 import {IonFab, IonIcon} from "@ionic/react";
 import {wifi} from "ionicons/icons";
-import {useNetwork} from "./useNetwork";
+import {NetworkStatusContext} from "./NetworkStatusProvider";
 
 const NetworkStatus: React.FC = () => {
-    const { networkStatus } = useNetwork();
+    const { connected } = useContext(NetworkStatusContext);
     return (
         <IonFab vertical="top" horizontal="start" slot="fixed">
-            <IonIcon size="large" icon={wifi} style={networkStatus.connected?{'color': 'green'}:{'color':'red'}}/>
+            <IonIcon size="large" icon={wifi} style={connected?{'color': 'green'}:{'color':'red'}}/>
         </IonFab>
     );
 }

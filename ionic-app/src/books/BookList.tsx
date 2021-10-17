@@ -1,8 +1,8 @@
 import React, { useContext } from 'react';
 import { RouteComponentProps } from 'react-router';
 import {
-    IonButton,
-    IonContent,
+    IonButton, IonCheckbox,
+    IonContent, IonDatetime,
     IonFab,
     IonFabButton,
     IonHeader,
@@ -18,12 +18,15 @@ import { getLogger } from '../core';
 import { BookContext } from './BookProvider';
 import {AuthContext} from "../auth";
 import {NetworkStatus} from "../networkStatus";
+import {BookEdit} from "./index";
+import {NetworkStatusContext} from "../networkStatus/NetworkStatusProvider";
 
 const log = getLogger('BookList');
 
 const BookList: React.FC<RouteComponentProps> = ({ history }) => {
-    const { books, fetching, fetchingError } = useContext(BookContext);
-    const {logout} = useContext(AuthContext);
+    const { books, fetching, fetchingError, savingError, deleteError } = useContext(BookContext);
+    const {logout, isAuthenticated} = useContext(AuthContext);
+
     log('render');
     return (
         <IonPage>
@@ -34,6 +37,12 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                 </IonToolbar>
             </IonHeader>
             <IonContent>
+                {savingError && (
+                    <div>{savingError.message || 'Failed to save item'}</div>
+                )}
+                {
+                    deleteError && (<div>{deleteError.message || 'Failed to delete'}</div>)
+                }
                 <IonLoading isOpen={fetching} message="Fetching books" />
                 {books && (
                     <IonList>
@@ -60,6 +69,9 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                         <IonIcon icon={add} />
                     </IonFabButton>
                 </IonFab>
+
+                <IonCheckbox style={{'visibility':'hidden'}}></IonCheckbox>
+                <IonDatetime style={{'visibility':'hidden'}}></IonDatetime>
             </IonContent>
         </IonPage>
     );

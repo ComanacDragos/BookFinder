@@ -1,8 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {useCallback, useContext, useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
 import { getLogger } from '../core';
 import { signup as signupApi, login as loginApi } from './authApi';
 import {LocationState} from "@ionic/react-router/dist/types/ReactRouter/IonRouter";
+import {getToken, removeToken, setToken} from "../storage";
+import {remove} from "ionicons/icons";
+import {NetworkStatusContext} from "../networkStatus/NetworkStatusProvider";
 
 const log = getLogger('AuthProvider');
 
@@ -12,8 +15,8 @@ type SignupFn = (username?: string, password?: string, confirmPassword?: string)
 type ClearErrorFn = (callback:()=>void)=>void;
 
 export interface AuthState {
-    authenticationError: Error | null;
-    signupError: Error | null;
+    authenticationError: Error | null | string;
+    signupError: Error | null | string;
     isAuthenticated: boolean;
     isAuthenticating: boolean;
     signupInProcess: boolean;
@@ -57,8 +60,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const logout = useCallback<LogoutFn>(logoutCallback, []);
     const signup = useCallback<SignupFn>(signupCallback, [])
     const clearError = useCallback<ClearErrorFn>(clearErrorsCallback, []);
+
+    const {connected} = useContext(NetworkStatusContext);
+
     useEffect(authenticationEffect, [pendingAuthentication]);
     useEffect(signupEffect, [pendingSignup]);
+    useEffect(isLoggedInEffect, [])
+
     const value = { isAuthenticated, login, logout, signup, clearError, isAuthenticating, signupInProcess, pendingSignup, authenticationError, signupError, token };
     log('render');
     return (
@@ -67,7 +75,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         </AuthContext.Provider>
     );
 
+    function isLoggedInEffect(){
+        let canceled = false;
+        isLoggedIn();
+        return () => {
+            canceled = true;
+        }
+
+        async function isLoggedIn(){
+            const storageToken = await getToken();
+            if(canceled)
+                return
+            if(storageToken!=='' && token === '')
+                setState({...state,
+                        token: storageToken,
+                        isAuthenticated: true
+                    }
+                )
+        }
+    }
+
     function clearErrorsCallback(callback: ()=>void){
+        log('clear errors')
         setState({...state, authenticationError: null, signupError: null})
         callback()
     }
@@ -97,7 +126,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         async function signup(){
             if (!pendingSignup) {
                 log('signup, !pendingSignup, return');
+
                 return;
+            }
+            if(!connected){
+                log('not connected')
+                setState({
+                    ...state,
+                    signupError: 'No connection',
+                    pendingSignup: false
+                })
+                return
             }
             try {
                 log('signup')
@@ -111,6 +150,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 if (canceled) {
                     return;
                 }
+                setToken(token);
                 log('signup succeeded');
                 setState({
                     ...state,
@@ -136,6 +176,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     function logoutCallback(){
         log('logout')
+        removeToken();
         setState({
             ...state,
             isAuthenticated: false,
@@ -168,6 +209,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 log('authenticate, !pendingAuthentication, return');
                 return;
             }
+            if(!connected){
+                log('not connected')
+                setState({
+                    ...state,
+                    authenticationError: 'No connection',
+                    pendingAuthentication: false
+                })
+                return
+            }
             try {
                 log('authenticate...');
                 setState({
@@ -179,6 +229,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 if (canceled) {
                     return;
                 }
+                setToken(token);
                 log('authenticate succeeded');
                 setState({
                     ...state,

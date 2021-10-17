@@ -5,7 +5,6 @@ import {
     IonButton,
     IonContent,
     IonHeader,
-    IonIcon,
     IonInput,
     IonLoading,
     IonPage,
@@ -15,7 +14,7 @@ import {
 } from '@ionic/react';
 import { AuthContext } from './AuthProvider';
 import { getLogger } from '../core';
-import {NetworkStatus, useNetwork} from "../networkStatus";
+import {NetworkStatus} from "../networkStatus";
 
 const log = getLogger('Login');
 
@@ -25,7 +24,7 @@ interface LoginState {
 }
 
 export const Login: React.FC<RouteComponentProps> = ({ history }) => {
-    const { isAuthenticated, isAuthenticating, login, authenticationError, clearError } = useContext(AuthContext);
+    const { isAuthenticated, isAuthenticating, login, authenticationError, clearError, token } = useContext(AuthContext);
     const [state, setState] = useState<LoginState>({});
     const { username, password } = state;
 
@@ -70,6 +69,9 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
                 {authenticationError && (
                     <div>{authenticationError || 'Failed to authenticate'}</div>
                 )}
+                <div>
+                    Token is: {token}
+                </div>
             </IonContent>
         </IonPage>
     );

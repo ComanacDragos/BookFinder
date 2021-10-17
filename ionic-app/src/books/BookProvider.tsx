@@ -4,10 +4,12 @@ import { getLogger } from '../core';
 import { BookProps } from './BookProps';
 import { createBook, getBooks, newWebSocket, updateBook, deleteBook } from './bookApi';
 import { AuthContext } from '../auth';
+import {NetworkStatusContext} from "../networkStatus/NetworkStatusProvider";
+import {addAction, getActions, removeActions} from "../storage";
 
 const log = getLogger('BookProvider');
 
-type SaveBookFn = (book: BookProps) => Promise<any>;
+type SaveBookFn = (book: BookProps, isConnected: boolean) => Promise<any>;
 type DeleteBookFn = (bookId: string) => Promise<any>;
 
 export interface BooksState {
@@ -93,20 +95,45 @@ interface BookProviderProps {
 }
 
 export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
+    const {connected} = useContext(NetworkStatusContext);
     const { token } = useContext(AuthContext);
+
     const [state, dispatch] = useReducer(reducer, initialState);
     const { books, fetching, fetchingError, saving, savingError, deleting, deleteError } = state;
     useEffect(getBooksEffect, [token]);
     useEffect(wsEffect, [token]);
+    useEffect(backOnlineEffect, [connected])
     const saveBook = useCallback<SaveBookFn>(saveBookCallback, [token]);
     const delBook = useCallback<DeleteBookFn>(deleteBookCallBack, [token])
     const value = { books, fetching, fetchingError, saving, savingError, deleting, deleteError, saveBook: saveBook, deleteBook: delBook };
     log('returns');
+
     return (
         <BookContext.Provider value={value}>
             {children}
         </BookContext.Provider>
     );
+
+    function backOnlineEffect(){
+        let canceled = false;
+        backOnline()
+        return () => {canceled = true}
+
+        async function backOnline(){
+            if(connected) {
+                const actions = await getActions();
+                if(canceled)
+                    return;
+
+                for (let i=0;i<actions.length; i++) {
+                    if(actions[i])
+                        saveBookCallback(actions[i].payload, connected)
+                }
+                await removeActions();
+                value.savingError = null;
+            }
+        }
+    }
 
     function getBooksEffect() {
         let canceled = false;
@@ -134,15 +161,24 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
         }
     }
 
-    async function saveBookCallback(book: BookProps) {
+    async function saveBookCallback(book: BookProps, isConnected: boolean) {
         try {
-            log('saveBook started');
-            dispatch({ type: SAVE_BOOK_STARTED });
-            const savedBook = await (book._id ? updateBook(token, book) : createBook(token, book));
-            log('saveBook succeeded');
-            dispatch({ type: SAVE_BOOK_SUCCEEDED, payload: { book: savedBook } });
+            log('saveBook started, isConnected: ' + connected);
+            if(isConnected){
+                dispatch({ type: SAVE_BOOK_STARTED });
+                const savedBook = await (book._id ? updateBook(token, book) : createBook(token, book));
+                log('saveBook succeeded');
+                dispatch({ type: SAVE_BOOK_SUCCEEDED, payload: { book: savedBook } });
+            }else{
+                log('saveBook failed - no network');
+                addAction(book._id?'updateBook':'createBook', book)
+                dispatch({ type: SAVE_BOOK_FAILED, payload: {error:{
+                    message: `Changes to book with title ${book.title} will be sent to server when back online`
+                }}});
+            }
+
         } catch (error) {
-            log('saveBook failed');
+            log('saveBook failed --' + error);
             dispatch({ type: SAVE_BOOK_FAILED, payload: { error } });
         }
     }

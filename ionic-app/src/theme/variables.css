@@ -264,7 +264,7 @@ div{
 }
 
 .book{
-  border-width: 3;
+  border-width: 3px;
   border-style: groove;
   border-color: white;
   width: 90%;

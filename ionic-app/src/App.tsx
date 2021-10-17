@@ -23,11 +23,13 @@ import './theme/variables.css';
 import {BookEdit, BookList} from "./books";
 import {BookProvider} from "./books/BookProvider";
 import {AuthProvider, Login, Signup, PrivateRoute} from "./auth";
+import {NetworkStatusProvider} from "./networkStatus/NetworkStatusProvider";
 
 const App: React.FC = () => (
     <IonApp>
         <IonReactRouter>
             <IonRouterOutlet>
+                <NetworkStatusProvider>
                 <AuthProvider>
                     <Route path="/login" component={Login} exact={true}/>
                     <Route path="/signup" component={Signup} exact={true}/>
@@ -35,9 +37,11 @@ const App: React.FC = () => (
                         <PrivateRoute path="/books" component={BookList} exact={true}/>
                         <PrivateRoute path="/book" component={BookEdit} exact={true}/>
                         <PrivateRoute path="/book/:id" component={BookEdit} exact={true}/>
+
                     </BookProvider>
                     <Route exact path="/" render={() => <Redirect to="/books"/>}/>
                 </AuthProvider>
+                </NetworkStatusProvider>
             </IonRouterOutlet>
         </IonReactRouter>
     </IonApp>
