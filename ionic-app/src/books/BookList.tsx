@@ -7,7 +7,7 @@ import {
     IonFabButton,
     IonHeader,
     IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel,
-    IonList, IonLoading,
+    IonList, IonLoading,IonButtons,
     IonPage, IonSelect, IonSelectOption,
     IonTitle,
     IonToolbar, useIonViewWillEnter
@@ -28,7 +28,8 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
     const {connected} = useContext(NetworkStatusContext);
 
     useIonViewWillEnter(async () =>{
-        await fetchPaginated(connected);
+        if(offset ===0)
+            await fetchPaginated(connected);
     }, [token, connected, offset]);
 
     async function searchNext($event: CustomEvent<void>) {
@@ -51,6 +52,9 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>Libraries</IonTitle>
+                    <IonButtons slot="end">
+                        <IonButton slot="end" onClick={()=> history.push('/libraries')}>Search</IonButton>
+                    </IonButtons>
                 </IonToolbar>
                 <div>
                     Disable scroll {JSON.stringify(disableInfiniteScroll)}
@@ -67,11 +71,11 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                 {fetchingError && (
                     <div>{fetchingError.message || 'Failed to fetch books'}</div>
                 )}
-            </IonHeader>
-            <IonContent>
                 <IonSelect value={filter} placeholder="Select Library" onIonChange={e => setFilterFn && setFilterFn(e.detail.value)}>
                     {libraries.map(library => <IonSelectOption key={library} value={library}>{library}</IonSelectOption>)}
                 </IonSelect>
+            </IonHeader>
+            <IonContent>
                 <IonLoading isOpen={fetching} message="Fetching books" />
                 {
                     books?.map((props) =>{
