@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { getLogger } from '../core';
 import { signup as signupApi, login as loginApi } from './authApi';
 import {LocationState} from "@ionic/react-router/dist/types/ReactRouter/IonRouter";
-import {getToken, removeToken, setToken} from "../storage";
+import {getToken, removeActions, removeToken, setToken} from "../storage";
 import {remove} from "ionicons/icons";
 import {NetworkStatusContext} from "../networkStatus/NetworkStatusProvider";
 
@@ -177,6 +177,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     function logoutCallback(){
         log('logout')
         removeToken();
+        removeActions();
         setState({
             ...state,
             isAuthenticated: false,
