@@ -1,12 +1,16 @@
 import axios from 'axios';
 import { BookProps } from './BookProps';
-import { authConfig, baseUrl, getLogger, withLogs } from '../core';
+import {authConfig, baseUrl, getLogger, pageSize, withLogs} from '../core';
 
 
 const bookUrl = `http://${baseUrl}/api/book`;
 
 export const getBooks: (token: string) => Promise<BookProps[]> = (token) => {
     return withLogs(axios.get(bookUrl, authConfig(token)), 'getBooks');
+}
+
+export const getBooksPaginated: (token: string, offset:number) => Promise<BookProps[]> = (token, offset) => {
+    return withLogs(axios.get(bookUrl + `/paginated/size=${pageSize}&offset=${offset}`, authConfig(token)), 'getBooksPaginated');
 }
 
 export const createBook: (token: string, book: BookProps) => Promise<BookProps[]> = (token ,book) => {
