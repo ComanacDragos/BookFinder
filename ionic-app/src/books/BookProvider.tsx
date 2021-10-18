@@ -2,19 +2,31 @@ import React, { useCallback, useContext, useEffect, useReducer } from 'react';
 import PropTypes from 'prop-types';
 import { getLogger } from '../core';
 import { BookProps } from './BookProps';
-import {createBook, getBooks, newWebSocket, updateBook, deleteBook, getBooksPaginated} from './bookApi';
+import {
+    createBook,
+    getBooks,
+    newWebSocket,
+    updateBook,
+    deleteBook,
+    getBooksPaginated,
+    getLibraries,
+    getBooksPaginatedAndFiltered
+} from './bookApi';
 import { AuthContext } from '../auth';
 import {NetworkStatusContext} from "../networkStatus/NetworkStatusProvider";
-import {addAction, getActions, removeActions} from "../storage";
+import {addAction, getActions, getToken, removeActions} from "../storage";
 
 const log = getLogger('BookProvider');
 
 type SaveBookFn = (book: BookProps, isConnected: boolean) => Promise<any>;
 type DeleteBookFn = (bookId: string) => Promise<any>;
 type FetchPaginatedFn = (isConnected: boolean) => void
+type SetFilterFn = (filter: string) => void
+
 
 export interface BooksState {
     books?: BookProps[],
+    libraries: string[]
     fetching: boolean,
     fetchingError?: Error | null,
     saving: boolean,
@@ -29,6 +41,11 @@ export interface BooksState {
     offset: number,
     disableInfiniteScroll: boolean,
     fetchPaginated: FetchPaginatedFn
+    clearData?: () => void
+
+    filter: string | null,
+    startFiltering: boolean;
+    setFilterFn?: SetFilterFn
 }
 
 interface ActionProps {
@@ -38,11 +55,14 @@ interface ActionProps {
 
 const initialState: BooksState = {
     fetching: false,
+    libraries: [],
     saving: false,
     deleting: false,
     offset: 0,
     disableInfiniteScroll: false,
-    fetchPaginated: ()=>{}
+    fetchPaginated: ()=>{},
+    filter: null,
+    startFiltering: false
 };
 
 const FETCH_BOOKS_STARTED = 'FETCH_BOOKS_STARTED';
@@ -59,6 +79,15 @@ const DELETE_BOOK_SUCCEEDED = 'DELETE_BOOK_SUCCEEDED';
 const DELETE_BOOK_FAILED = 'DELETE_BOOK_FAILED';
 
 const DISABLE_INFINITE_SCROLL = 'DISABLE_INFINITE_SCROLL'
+
+const CLEAR_DATA = 'CLEAR_DATA'
+const CLEAR_BOOKS = 'CLEAR_BOOKS'
+
+const SET_LIBRARIES = 'SET_LIBRARIES'
+
+const SET_FILTER = 'SET_FILTER'
+const END_FILTERING = 'END_FILTERING'
+
 
 const reducer: (state: BooksState, action: ActionProps) => BooksState =
     (state, { type, payload }) => {
@@ -101,6 +130,29 @@ const reducer: (state: BooksState, action: ActionProps) => BooksState =
                 return {...state, deleteError: payload.error, deleting: false}
             case DISABLE_INFINITE_SCROLL:
                 return {...state, disableInfiniteScroll: true, fetching: false}
+            case CLEAR_DATA:
+                return {
+                    ...state, books: [],
+                    libraries: [],
+                    fetching: false,
+                    saving: false,
+                    deleting: false,
+                    offset: 0,
+                    disableInfiniteScroll: false,
+                    deleteError: null,
+                    savingError: null,
+                    fetchingError: null,
+                    filter: null,
+                    startFiltering: false
+                }
+            case SET_LIBRARIES:
+                return {...state, libraries: payload.libraries}
+            case SET_FILTER:
+                 return {...state, filter: payload.filter}
+            case CLEAR_BOOKS:
+                return {...state, books: [], offset: 0, startFiltering: true, disableInfiniteScroll: false}
+            case END_FILTERING:
+                return {...state, startFiltering: false}
             default:
                 return state;
         }
@@ -114,27 +166,69 @@ interface BookProviderProps {
 
 export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
     const {connected} = useContext(NetworkStatusContext);
-    const { token } = useContext(AuthContext);
+    const { token, isAuthenticated } = useContext(AuthContext);
 
     const [state, dispatch] = useReducer(reducer, initialState);
-    const { books, fetching, fetchingError, saving, savingError, deleting, deleteError, offset, disableInfiniteScroll } = state;
+    const { startFiltering, books, libraries, filter, fetching, fetchingError, saving, savingError, deleting, deleteError, offset, disableInfiniteScroll, clearData } = state;
     //useEffect(getBooksPaginatedEffect, [token]);
     useEffect(wsEffect, [token]);
     useEffect(backOnlineEffect, [connected])
+    useEffect(setLibrariesEffect, [books])
+
+    const clearDataFn = useCallback<()=>void>(clearDataCallback, [token])
     const saveBook = useCallback<SaveBookFn>(saveBookCallback, [token]);
     const delBook = useCallback<DeleteBookFn>(deleteBookCallBack, [token])
     const fetchPaginated = useCallback<FetchPaginatedFn>(fetchPaginatedBooks, [token, connected, offset]);
+    const setFilterCallback = useCallback<SetFilterFn>(setFilter, [])
 
-    const value = { books, fetching, fetchingError, saving, savingError, deleting, deleteError,
-        saveBook: saveBook, deleteBook: delBook, fetchPaginated: fetchPaginated,
-        offset, disableInfiniteScroll };
+    const value = { books, libraries, fetching, fetchingError, saving, savingError, deleting, deleteError,
+        saveBook: saveBook, deleteBook: delBook, fetchPaginated: fetchPaginated, setFilterFn: setFilterCallback,
+        offset, disableInfiniteScroll, clearData: clearDataFn, filter, startFiltering };
     log('returns');
+
+    useEffect(()=>{
+        dispatch({type: CLEAR_BOOKS})
+        log('clear books')
+    }, [filter])
+    
+    useEffect(
+        ()=>{
+            if(startFiltering){
+                fetchPaginated(connected)
+                dispatch({type: END_FILTERING})
+                log('end filtering')
+            }
+        },[startFiltering]
+    )
 
     return (
         <BookContext.Provider value={value}>
             {children}
         </BookContext.Provider>
     );
+
+    async function setFilter(filter: string){
+        dispatch({type: SET_FILTER, payload: {filter: filter}})
+    }
+
+    async function clearDataCallback(){
+        dispatch({type: CLEAR_DATA})
+    }
+
+    function setLibrariesEffect(){
+        if(!token || !connected)
+            return ;
+        let canceled = false;
+        setLibraries()
+        return () => {canceled = true}
+
+        async function setLibraries(){
+            if(!canceled){
+                const libraries = await getLibraries(token)
+                dispatch({ type: SET_LIBRARIES, payload: { libraries: libraries } });
+            }
+        }
+    }
 
     function backOnlineEffect(){
         let canceled = false;
@@ -158,29 +252,31 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
     }
 
     async function fetchPaginatedBooks(isConnected: boolean) {
-        if (!token?.trim()) {
+        const trueToken = await getToken();
+        if (!token?.trim() || token !== trueToken) {
             return;
         }
+
         if(!isConnected){
             log("Can't fetch paginated books because there is no connection")
             return;
         }
-        if(fetching){
+        if(fetching || !isAuthenticated || !token){
             return;
         }
 
         try {
             log('fetchBooksPaginated started');
-            dispatch({ type: FETCH_BOOKS_STARTED });
-            const books = await getBooksPaginated(token, offset);
-            log('fetchBooksPaginated succeeded');
+            dispatch({ type: FETCH_BOOKS_STARTED })
 
+            const books = filter ? await getBooksPaginatedAndFiltered(token, offset, filter):await getBooksPaginated(token, offset);
+            log('fetchBooksPaginated succeeded - books:', books.length, " offset: ", offset);
             if(books && books.length>0){
                 dispatch({ type: FETCH_BOOKS_PAGINATED_SUCCEEDED, payload: { books: books, offset: offset } });
                 if(books.length < 3)
-                    dispatch({type: DISABLE_INFINITE_SCROLL});
+                    dispatch({type: DISABLE_INFINITE_SCROLL, payload: {offset: offset}});
             }else{
-                dispatch({type: DISABLE_INFINITE_SCROLL});
+                dispatch({type: DISABLE_INFINITE_SCROLL, payload: {offset: offset}});
             }
         } catch (error) {
             log('fetchBooksPaginated failed');
@@ -222,6 +318,8 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
                 const savedBook = await (book._id ? updateBook(token, book) : createBook(token, book));
                 log('saveBook succeeded');
                 dispatch({ type: SAVE_BOOK_SUCCEEDED, payload: { book: savedBook } });
+                const libraries = await getLibraries(token)
+                dispatch({ type: SET_LIBRARIES, payload: { libraries: libraries } });
             }else{
                 log('saveBook failed - no network');
                 addAction(book._id?'updateBook':'createBook', book)

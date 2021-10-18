@@ -9,8 +9,16 @@ export const getBooks: (token: string) => Promise<BookProps[]> = (token) => {
     return withLogs(axios.get(bookUrl, authConfig(token)), 'getBooks');
 }
 
+export const getLibraries: (token: string) => Promise<string[]> = (token) =>{
+    return withLogs(axios.get(bookUrl + '/libraries', authConfig(token)), 'getLibraries');
+}
+
 export const getBooksPaginated: (token: string, offset:number) => Promise<BookProps[]> = (token, offset) => {
     return withLogs(axios.get(bookUrl + `/paginated/size=${pageSize}&offset=${offset}`, authConfig(token)), 'getBooksPaginated');
+}
+
+export const getBooksPaginatedAndFiltered: (token: string, offset:number, filter: string) => Promise<BookProps[]> = (token, offset, filter) => {
+    return withLogs(axios.get(bookUrl + `/paginated/filtered/size=${pageSize}&offset=${offset}&filter=${filter}`, authConfig(token)), `getBooksPaginatedAndFiltered - ${filter} - ${offset}`);
 }
 
 export const createBook: (token: string, book: BookProps) => Promise<BookProps[]> = (token ,book) => {

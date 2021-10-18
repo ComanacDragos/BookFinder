@@ -8,7 +8,7 @@ import {
     IonHeader,
     IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel,
     IonList, IonLoading,
-    IonPage,
+    IonPage, IonSelect, IonSelectOption,
     IonTitle,
     IonToolbar, useIonViewWillEnter
 } from '@ionic/react';
@@ -23,17 +23,25 @@ import {NetworkStatusContext} from "../networkStatus/NetworkStatusProvider";
 const log = getLogger('BookList');
 
 const BookList: React.FC<RouteComponentProps> = ({ history }) => {
-    const { offset, books, fetching, fetchingError, savingError, deleteError, fetchPaginated, disableInfiniteScroll } = useContext(BookContext);
-    const {logout} = useContext(AuthContext);
+    const { filter, setFilterFn, libraries, clearData, offset, books, fetching, fetchingError, savingError, deleteError, fetchPaginated, disableInfiniteScroll } = useContext(BookContext);
+    const {logout, token} = useContext(AuthContext);
     const {connected} = useContext(NetworkStatusContext);
 
     useIonViewWillEnter(async () =>{
         await fetchPaginated(connected);
-    }, [connected, offset]);
+    }, [token, connected, offset]);
 
     async function searchNext($event: CustomEvent<void>) {
         await fetchPaginated(connected);
         ($event.target as HTMLIonInfiniteScrollElement).complete();
+    }
+
+    async function logoutHandle(){
+        if(logout && clearData){
+            log('logout handle')
+            clearData()
+            logout()
+        }
     }
 
     log('render');
@@ -56,8 +64,14 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                 {
                     deleteError && (<div>{deleteError.message || 'Failed to delete'}</div>)
                 }
+                {fetchingError && (
+                    <div>{fetchingError.message || 'Failed to fetch books'}</div>
+                )}
             </IonHeader>
             <IonContent>
+                <IonSelect value={filter} placeholder="Select Library" onIonChange={e => setFilterFn && setFilterFn(e.detail.value)}>
+                    {libraries.map(library => <IonSelectOption key={library} value={library}>{library}</IonSelectOption>)}
+                </IonSelect>
                 <IonLoading isOpen={fetching} message="Fetching books" />
                 {
                     books?.map((props) =>{
@@ -81,11 +95,9 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                     </IonInfiniteScrollContent>
                 </IonInfiniteScroll>
 
-                {fetchingError && (
-                    <div>{fetchingError.message || 'Failed to fetch books'}</div>
-                )}
+
                 <IonFab vertical="bottom" horizontal="start" slot="fixed">
-                    <IonButton onClick={()=>logout && logout()}>Logout</IonButton>
+                    <IonButton onClick={logoutHandle}>Logout</IonButton>
                 </IonFab>
                 <IonFab vertical="bottom" horizontal="end" slot="fixed">
                     <IonFabButton onClick={() => history.push('/book')}>
@@ -93,8 +105,8 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                     </IonFabButton>
                 </IonFab>
 
-                <IonCheckbox style={{'visibility':'hidden'}}></IonCheckbox>
-                <IonDatetime style={{'visibility':'hidden'}}></IonDatetime>
+                <IonCheckbox style={{'visibility': 'hidden'}}/>
+                <IonDatetime style={{'visibility': 'hidden'}}/>
             </IonContent>
         </IonPage>
     );
