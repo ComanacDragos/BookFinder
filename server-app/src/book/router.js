@@ -8,9 +8,53 @@ export const router = new Router();
 router.get('/', async (ctx) =>{
    const response = ctx.response;
    const userId = ctx.state.user._id;
-   response.body = await bookStore.find({userId});
+   const books = (await bookStore.find({userId}))
+       .sort(
+            (a, b) => new Date(b.date).getTime()-new Date(a.date).getTime()
+        );
+   response.body = books
    response.status = 200;
 });
+
+router.get('/libraries', async (ctx) =>{
+    const userId = ctx.state.user._id;
+    const books = await bookStore.find({userId})
+    const libraries = {}
+    books.forEach(book=>libraries[book.library] = '')
+    ctx.response.body = Object.keys(libraries)
+    ctx.response.status = 200
+})
+
+router.get('/paginated/size=:size&offset=:offset', async (ctx) =>{
+    const response = ctx.response;
+    const userId = ctx.state.user._id;
+    const books = (await bookStore.find({userId}))
+        .sort(
+            (a, b) => new Date(b.date).getTime()-new Date(a.date).getTime()
+    );;
+    const size = parseInt(ctx.params.size);
+    const offset = parseInt(ctx.params.offset);
+    response.body = books.slice(offset*size, offset*size+size)
+    response.status = 200;
+})
+
+router.get('/paginated/filtered/size=:size&offset=:offset&filter=:filter', async (ctx) =>{
+    const response = ctx.response;
+    const userId = ctx.state.user._id;
+    const filter = ctx.params.filter;
+    console.log("filter: ", filter)
+    const books = (await bookStore.find({userId}))
+        .sort(
+            (a, b) => new Date(b.date).getTime()-new Date(a.date).getTime()
+        )
+        .filter(book => book.library === filter)
+    ;
+    const size = parseInt(ctx.params.size);
+    const offset = parseInt(ctx.params.offset);
+    response.body = books.slice(offset*size, offset*size+size)
+    response.status = 200;
+})
+
 
 router.get('/:id', async (ctx)=>{
     const userId = ctx.state.user._id;
@@ -55,7 +99,7 @@ router.put('/:id', async (ctx) => {
         return;
     }
     if(!bookId){
-        await createNote(ctx, book, response);
+        await createBook(ctx, book, response);
     }else {
         const userId = ctx.state.user._id;
         book.userId = userId;

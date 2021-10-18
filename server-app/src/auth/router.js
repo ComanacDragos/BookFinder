@@ -12,14 +12,31 @@ const createToken = (user) =>{
             _id: user._id
         },
         jwtConfig.secret,
-        { expiresIn: 60 * 60 * 60 }
+        { expiresIn: 60 * 60 * 60 * 24 }
     )
 }
 
 const createUser = async (user, response) => {
     try{
+        if(!user.username || user.username === ''){
+            response.body = { issue: [{ error: "Username must not be empty" }] };
+            response.status = 500;
+            return
+        }
+        if(!user.password || user.password === ''){
+            response.body = { issue: [{ error: "Password must not be empty" }] };
+            response.status = 500;
+            return
+        }
+        if(await userStore.findOne({username: user.username})){
+            response.body = { issue: [{ error: "Username already exists" }] };
+            response.status = 500;
+            return
+        }
+        delete user.confirmPassword;
         await userStore.insert(user);
-        response.body = {token: createToken(user)};
+
+        response.body = {token: createToken(await userStore.findOne({username: user.username}))};
         response.status = 201;
     }catch (err){
         response.body = { issue: [{ error: err.message }] };
@@ -27,7 +44,15 @@ const createUser = async (user, response) => {
     }
 }
 
-router.post('/signup', async (ctx) => await createUser(ctx.request.body, ctx.response));
+router.post('/signup', async (ctx) => {
+    const userData = ctx.request.body;
+    if(userData.password !== userData.confirmPassword){
+        ctx.response.body = { issue: [{ error: "Password and confirm password must be the same" }] };
+        ctx.response.status = 500;
+        return
+    }
+    await createUser(ctx.request.body, ctx.response)
+});
 
 router.post('/login', async (ctx) => {
     const credentials = ctx.request.body;
@@ -38,6 +63,6 @@ router.post('/login', async (ctx) => {
         response.status = 201;
     } else {
         response.body = {issue: [{error: 'Invalid credentials'}]};
-        response.status = 400;
+        response.status = 500;
     }
 });

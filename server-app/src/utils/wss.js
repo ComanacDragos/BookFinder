@@ -15,6 +15,7 @@ export const initWss = value =>{
             }
             try{
                 ws.user = jwt.verify(token, jwtConfig.secret);
+                //console.log(JSON.stringify(ws.user))
             }catch (err){
                 we.close();
             }
