@@ -111,7 +111,8 @@ const reducer: (state: BooksState, action: ActionProps) => BooksState =
                 const book = payload.book;
                 const index = books.findIndex(it => it._id === book._id);
                 if (index === -1) {
-                    books.splice(0, 0, book);
+                    if(state.filter && book.library === state.filter)
+                        books.splice(0, 0, book);
                 } else {
                     books[index] = book;
                 }
@@ -330,6 +331,7 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
 
         } catch (error) {
             log('saveBook failed --' + error);
+            addAction(book._id?'updateBook':'createBook', book)
             dispatch({ type: SAVE_BOOK_FAILED, payload: { error } });
         }
     }

@@ -56,12 +56,6 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                         <IonButton slot="end" onClick={()=> history.push('/libraries')}>Search</IonButton>
                     </IonButtons>
                 </IonToolbar>
-                <div>
-                    Disable scroll {JSON.stringify(disableInfiniteScroll)}
-                </div>
-                <div>
-                    Offset {JSON.stringify(offset)}
-                </div>
                 {savingError && (
                     <div>{savingError.message || 'Failed to save item'}</div>
                 )}

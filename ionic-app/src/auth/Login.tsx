@@ -69,9 +69,6 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
                 {authenticationError && (
                     <div>{authenticationError || 'Failed to authenticate'}</div>
                 )}
-                <div>
-                    Token is: {token}
-                </div>
             </IonContent>
         </IonPage>
     );
