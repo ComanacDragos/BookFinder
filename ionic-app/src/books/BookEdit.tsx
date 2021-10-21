@@ -70,7 +70,10 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
 
     const handleDelete = ()=>{
         log(`delete ${match.params.id}`)
-        deleteBook && deleteBook(match.params.id || '-1').then(() => history.goBack());
+        if(connected)
+            deleteBook && deleteBook(match.params.id || '-1').then(() => history.goBack());
+        else
+            alert("can't delete in offline mode")
     }
     log('render');
     return (

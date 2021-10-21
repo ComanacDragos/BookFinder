@@ -78,7 +78,7 @@ const createBook = async (ctx, book, response) => {
         book.userId = userId;
         response.body = await bookStore.insert(book);
         response.status = 201;
-        broadcast(userId, {type: 'created', payload: book});
+        broadcast(userId, {event: 'created', payload: response.body});
     }catch (err){
         response.body = {message: err.message};
         console.log(err.message)
@@ -107,7 +107,7 @@ router.put('/:id', async (ctx) => {
         if(updateCount === 1){
             response.body = book;
             response.status = 200;
-            broadcast(userId, {type: 'updated', payload: book});
+            broadcast(userId, {event: 'updated', payload: book});
         }else{
             response.body = {message: 'Resource no longer exists'};
             response.status = 405
@@ -123,5 +123,6 @@ router.del('/:id', async (ctx) =>{
     }else{
         await bookStore.remove({_id: ctx.params.id});
         ctx.response.status = 204;
+        broadcast(userId, {event: 'deleted', payload: book});
     }
 })

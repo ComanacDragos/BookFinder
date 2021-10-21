@@ -45,7 +45,10 @@ export interface BooksState {
 
     filter: string | null,
     startFiltering: boolean;
-    setFilterFn?: SetFilterFn
+    setFilterFn?: SetFilterFn,
+
+    actions: any,
+    settingActions: boolean
 }
 
 interface ActionProps {
@@ -62,7 +65,9 @@ const initialState: BooksState = {
     disableInfiniteScroll: false,
     fetchPaginated: ()=>{},
     filter: null,
-    startFiltering: false
+    startFiltering: false,
+    actions: [],
+    settingActions: false
 };
 
 const FETCH_BOOKS_STARTED = 'FETCH_BOOKS_STARTED';
@@ -88,6 +93,8 @@ const SET_LIBRARIES = 'SET_LIBRARIES'
 const SET_FILTER = 'SET_FILTER'
 const END_FILTERING = 'END_FILTERING'
 
+const SET_ACTIONS = 'SET_ACTIONS'
+
 
 const reducer: (state: BooksState, action: ActionProps) => BooksState =
     (state, { type, payload }) => {
@@ -98,7 +105,12 @@ const reducer: (state: BooksState, action: ActionProps) => BooksState =
                 return { ...state, books: payload.books, fetching: false };
             case FETCH_BOOKS_PAGINATED_SUCCEEDED:
                 return { ...state,
-                    books: state.offset===payload.offset?[...state.books  || [], ...payload.books]:state.books,
+                    books: state.offset===payload.offset?[...state.books
+                    || [], ...payload.books
+                            .filter((book:any)=>
+                                !state.books?.map(stateBook => stateBook._id).includes(book._id))
+                        ]
+                        :state.books,
                     fetching: false,
                     offset: state.offset===payload.offset?state.offset+1:state.offset,
                 }
@@ -111,14 +123,18 @@ const reducer: (state: BooksState, action: ActionProps) => BooksState =
                 const book = payload.book;
                 const index = books.findIndex(it => it._id === book._id);
                 if (index === -1) {
-                    if(state.filter && book.library === state.filter)
+                    if(state.filter === null)
                         books.splice(0, 0, book);
+                    else{
+                        if(book.library === state.filter)
+                            books.splice(0, 0, book);
+                    }
                 } else {
                     books[index] = book;
                 }
-                return { ...state, books: books, saving: false };
+                return { ...state, books: books, saving: false};
             case SAVE_BOOK_FAILED:
-                return { ...state, savingError: payload.error, saving: false };
+                return { ...state, savingError: payload.error, saving: false, settingActions: true  };
             case DELETE_BOOK_STARTED:
                 return {...state, deleteError: null, deleting: true}
             case DELETE_BOOK_SUCCEEDED:
@@ -126,7 +142,7 @@ const reducer: (state: BooksState, action: ActionProps) => BooksState =
                 if (deleteIndex !== -1 && state.books) {
                     state.books.splice(deleteIndex, 1);
                 }
-                return {...state, deleting: false};
+                return {...state, deleting: false, offset: state.offset!==0?state.offset-1:0};
             case DELETE_BOOK_FAILED:
                 return {...state, deleteError: payload.error, deleting: false}
             case DISABLE_INFINITE_SCROLL:
@@ -154,6 +170,8 @@ const reducer: (state: BooksState, action: ActionProps) => BooksState =
                 return {...state, books: [], offset: 0, startFiltering: true, disableInfiniteScroll: false}
             case END_FILTERING:
                 return {...state, startFiltering: false}
+            case SET_ACTIONS:
+                return {...state, actions: payload.actions, settingActions: false}
             default:
                 return state;
         }
@@ -170,7 +188,7 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
     const { token, isAuthenticated } = useContext(AuthContext);
 
     const [state, dispatch] = useReducer(reducer, initialState);
-    const { startFiltering, books, libraries, filter, fetching, fetchingError, saving, savingError, deleting, deleteError, offset, disableInfiniteScroll, clearData } = state;
+    const { startFiltering, books, libraries, filter, fetching, fetchingError, saving, savingError, deleting, deleteError, offset, disableInfiniteScroll, clearData, settingActions, actions } = state;
     //useEffect(getBooksPaginatedEffect, [token]);
     useEffect(wsEffect, [token]);
     useEffect(backOnlineEffect, [connected])
@@ -184,7 +202,9 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
 
     const value = { books, libraries, fetching, fetchingError, saving, savingError, deleting, deleteError,
         saveBook: saveBook, deleteBook: delBook, fetchPaginated: fetchPaginated, setFilterFn: setFilterCallback,
-        offset, disableInfiniteScroll, clearData: clearDataFn, filter, startFiltering };
+        offset, disableInfiniteScroll, clearData: clearDataFn, filter, startFiltering,
+        settingActions, actions
+    };
     log('returns');
 
     useEffect(()=>{
@@ -202,6 +222,8 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
         },[startFiltering]
     )
 
+    useEffect(setActionsEffect, [settingActions])
+
     return (
         <BookContext.Provider value={value}>
             {children}
@@ -214,6 +236,19 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
 
     async function clearDataCallback(){
         dispatch({type: CLEAR_DATA})
+    }
+
+    function setActionsEffect(){
+        let canceled = false;
+        setActions()
+        return () => {canceled = true}
+
+        async function setActions(){
+            if(!canceled && settingActions){
+                log("settings actions")
+                dispatch({type: SET_ACTIONS, payload: {actions: await getActions()}})
+            }
+        }
     }
 
     function setLibrariesEffect(){
@@ -243,11 +278,13 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
                     return;
 
                 for (let i=0;i<actions.length; i++) {
-                    if(actions[i])
+                    if(actions[i]){
                         saveBookCallback(actions[i].payload, connected)
+                    }
                 }
                 await removeActions();
                 value.savingError = null;
+                dispatch({type: SET_ACTIONS, payload:{actions: []}})
             }
         }
     }
@@ -313,12 +350,12 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
 
     async function saveBookCallback(book: BookProps, isConnected: boolean) {
         try {
-            log('saveBook started, isConnected: ' + connected);
+            log('saveBook started, isConnected: ' + isConnected);
             if(isConnected){
                 dispatch({ type: SAVE_BOOK_STARTED });
                 const savedBook = await (book._id ? updateBook(token, book) : createBook(token, book));
                 log('saveBook succeeded');
-                dispatch({ type: SAVE_BOOK_SUCCEEDED, payload: { book: savedBook } });
+                //dispatch({ type: SAVE_BOOK_SUCCEEDED, payload: { book: savedBook } });
                 const libraries = await getLibraries(token)
                 dispatch({ type: SET_LIBRARIES, payload: { libraries: libraries } });
             }else{
@@ -341,7 +378,7 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
             log("deleteBook started")
             dispatch({type: DELETE_BOOK_STARTED})
             await deleteBook(token, bookId);
-            dispatch({type: DELETE_BOOK_SUCCEEDED, payload: {bookId: bookId}})
+            //dispatch({type: DELETE_BOOK_SUCCEEDED, payload: {bookId: bookId}})
         }catch (error){
             log('deleteBook failed');
             dispatch({ type: SAVE_BOOK_FAILED, payload: { error } });
