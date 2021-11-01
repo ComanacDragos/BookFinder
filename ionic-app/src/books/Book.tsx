@@ -1,13 +1,15 @@
 import React from 'react';
-import {IonIcon, IonItem, IonLabel} from '@ionic/react';
+import {IonIcon, IonImg, IonItem, IonLabel} from '@ionic/react';
 import { BookProps } from './BookProps';
 import {checkmarkCircleOutline, removeCircleOutline} from "ionicons/icons";
+import {usePhoto} from "../photos/usePhoto";
 
 interface BookPropsExt extends BookProps {
     onEdit: (id?: string) => void;
 }
 
 const Book: React.FC<BookPropsExt> = (props) => {
+    const {photo} = usePhoto(props._id)
     return (
         <IonItem onClick={() => props.onEdit(props._id)}>
            <div className="book">
@@ -26,6 +28,10 @@ const Book: React.FC<BookPropsExt> = (props) => {
                <IonLabel>{props.library}</IonLabel>
                <IonLabel>{new Date(props.dueDate).toDateString()}</IonLabel>
                <IonLabel>Pages: {props.pages}</IonLabel>
+
+               {photo && photo.webviewPath && photo.webviewPath !== '' &&
+                   <IonImg class="myImg" src={photo.webviewPath}/>
+               }
            </div>
         </IonItem>
 

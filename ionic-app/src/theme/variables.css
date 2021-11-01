@@ -272,3 +272,9 @@ div{
   padding: 5px;
   text-align: center;
 }
+
+.myImg{
+  width: 15em;
+  height: 15em;
+  margin: auto;
+}

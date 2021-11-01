@@ -19,7 +19,9 @@ export function withLogs<T>(promise: Promise<ResponseProps<T>>, fnName: string):
         })
         .catch(err => {
             log(`${fnName} - failed`);
-            return Promise.reject(err.response.data.issue[0].error);
+            if(err.response.data.issue)
+                return Promise.reject(err.response.data.issue[0].error);
+            return Promise.reject(err)
         });
 }
 

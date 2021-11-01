@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { BookProps } from './BookProps';
 import {authConfig, baseUrl, getLogger, pageSize, withLogs} from '../core';
+import {getPhotoOfBook} from "../storage/photoStorage";
+import {useFilesystem} from "@ionic/react-hooks/filesystem";
 
 
 const bookUrl = `http://${baseUrl}/api/book`;
@@ -21,11 +23,11 @@ export const getBooksPaginatedAndFiltered: (token: string, offset:number, filter
     return withLogs(axios.get(bookUrl + `/paginated/filtered/size=${pageSize}&offset=${offset}&filter=${filter}`, authConfig(token)), `getBooksPaginatedAndFiltered - ${filter} - ${offset}`);
 }
 
-export const createBook: (token: string, book: BookProps) => Promise<BookProps[]> = (token ,book) => {
+export const createBook: (token: string, book: BookProps) => Promise<BookProps> = (token ,book) => {
     return withLogs(axios.post(bookUrl, book, authConfig(token)), 'createBook');
 }
 
-export const updateBook: (token: string, book: BookProps) => Promise<BookProps[]> = (token, book) => {
+export const updateBook: (token: string, book: BookProps) => Promise<BookProps> = (token, book) => {
     return withLogs(axios.put(`${bookUrl}/${book._id}`, book, authConfig(token)), 'updateBook');
 }
 

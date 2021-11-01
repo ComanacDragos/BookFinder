@@ -65,9 +65,7 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                 {fetchingError && (
                     <div>{fetchingError.message || 'Failed to fetch books'}</div>
                 )}
-                {
-                    <div>Offset is {JSON.stringify(offset)}</div>
-                }
+
                 <IonSelect value={filter} placeholder="Select Library" onIonChange={e => setFilterFn && setFilterFn(e.detail.value)}>
                     {libraries.map(library => <IonSelectOption key={library} value={library}>{library}</IonSelectOption>)}
                 </IonSelect>

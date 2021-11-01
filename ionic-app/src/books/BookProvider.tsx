@@ -15,6 +15,8 @@ import {
 import { AuthContext } from '../auth';
 import {NetworkStatusContext} from "../networkStatus/NetworkStatusProvider";
 import {addAction, getActions, getToken, removeActions} from "../storage";
+import {useFilesystem} from "@ionic/react-hooks/filesystem";
+import {save} from "ionicons/icons";
 
 const log = getLogger('BookProvider');
 
@@ -22,7 +24,6 @@ type SaveBookFn = (book: BookProps, isConnected: boolean) => Promise<any>;
 type DeleteBookFn = (bookId: string) => Promise<any>;
 type FetchPaginatedFn = (isConnected: boolean) => void
 type SetFilterFn = (filter: string) => void
-
 
 export interface BooksState {
     books?: BookProps[],
@@ -48,7 +49,7 @@ export interface BooksState {
     setFilterFn?: SetFilterFn,
 
     actions: any,
-    settingActions: boolean
+    settingActions: boolean,
 }
 
 interface ActionProps {
@@ -189,6 +190,8 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
 
     const [state, dispatch] = useReducer(reducer, initialState);
     const { startFiltering, books, libraries, filter, fetching, fetchingError, saving, savingError, deleting, deleteError, offset, disableInfiniteScroll, clearData, settingActions, actions } = state;
+    const { deleteFile, readFile, writeFile } = useFilesystem();
+
     //useEffect(getBooksPaginatedEffect, [token]);
     useEffect(wsEffect, [token]);
     useEffect(backOnlineEffect, [connected])
@@ -358,6 +361,7 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
                 //dispatch({ type: SAVE_BOOK_SUCCEEDED, payload: { book: savedBook } });
                 const libraries = await getLibraries(token)
                 dispatch({ type: SET_LIBRARIES, payload: { libraries: libraries } });
+                return savedBook._id
             }else{
                 log('saveBook failed - no network');
                 addAction(book._id?'updateBook':'createBook', book)

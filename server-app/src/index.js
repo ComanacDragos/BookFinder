@@ -6,6 +6,7 @@ import bodyParser from "koa-bodyparser";
 import { timingLogger, exceptionHandler, jwtConfig, initWss, verifyClient } from './utils';
 import { router as bookRouter } from './book';
 import { router as authRouter } from './auth';
+import {router as photoRouter} from './photo'
 import jwt from 'koa-jwt';
 import cors from '@koa/cors';
 
@@ -34,11 +35,17 @@ app.use(jwt(jwtConfig))
 //protected
 
 const protectedApiRouter = new Router({prefix});
+
+const protectedApiRouterPhotos = new Router({prefix});
 protectedApiRouter
     .use('/book', bookRouter.routes());
+
+protectedApiRouterPhotos.use("/photo", photoRouter.routes())
 app
     .use(protectedApiRouter.routes())
-    .use(protectedApiRouter.allowedMethods());
+    .use(protectedApiRouter.allowedMethods())
+    .use(protectedApiRouterPhotos.routes())
+    .use(protectedApiRouterPhotos.allowedMethods());
 
 server.listen(3000);
 console.log('started on port 3000')

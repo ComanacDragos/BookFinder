@@ -8,14 +8,21 @@ import {
     IonLoading,
     IonPage,
     IonTitle,
-    IonToolbar
+    IonToolbar,
+    IonImg,
+    IonFab,
+    IonFabButton,
+    IonIcon
 } from '@ionic/react';
 import { getLogger } from '../core';
 import { BookContext } from './BookProvider';
 import { RouteComponentProps } from 'react-router';
-import { BookProps } from './BookProps';
+import {BookProps} from './BookProps';
 import {NetworkStatus} from "../networkStatus";
 import {NetworkStatusContext} from "../networkStatus/NetworkStatusProvider";
+import { camera } from 'ionicons/icons';
+import {usePhoto} from "../photos/usePhoto";
+import {AuthContext} from "../auth";
 
 const log = getLogger('BookEdit');
 
@@ -34,7 +41,10 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
     const [pages, setPages] = useState(0);
     const [dueDate, setDueDate] = useState(new Date(Date.now()))
 
+    const {photo, takePhoto, savePicture} = usePhoto(match.params.id)
+
     const [book, setBook] = useState<BookProps>();
+
     useEffect(() => {
         log('useEffect');
         const routeId = match.params.id || '';
@@ -48,24 +58,27 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
             setDueDate(book.dueDate);
         }
     }, [match.params.id, books]);
-    const handleSave = () => {
+    const handleSave = async () => {
         const editedBook = book ?
             { ...book,
                 title:title,
                 library: library,
                 isAvailable: isAvailable,
                 dueDate: dueDate,
-                pages: pages
+                pages: pages,
             }
             : { title:title,
                 library: library,
                 isAvailable: isAvailable,
                 date: new Date(Date.now()),
                 dueDate: dueDate,
-                pages: pages
+                pages: pages,
         };
 
-        saveBook && saveBook(editedBook, connected).then(() => history.goBack());
+        saveBook && saveBook(editedBook, connected)
+            .then(async bookId => bookId && photo.webviewPath
+                && await savePicture(bookId))
+            .then(() => history.goBack());
     };
 
     const handleDelete = ()=>{
@@ -114,7 +127,15 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
                     <IonDatetime max="2222-10-31" value={new Date(dueDate).toDateString()} onIonChange={e =>
                         setDueDate(new Date(Date.parse(e.detail.value || new Date(Date.now()).toDateString())))} />
                 </IonItem>
+                {photo.webviewPath && <IonItem>
+                    <IonImg src={photo.webviewPath}/>
+                </IonItem>}
 
+                <IonFab vertical="bottom" horizontal="center" slot="fixed">
+                    <IonFabButton onClick={() => takePhoto()}>
+                        <IonIcon icon={camera}/>
+                    </IonFabButton>
+                </IonFab>
                 <IonLoading isOpen={saving || deleting} />
             </IonContent>
         </IonPage>
