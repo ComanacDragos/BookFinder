@@ -43,6 +43,7 @@ export function usePhoto(bookId: string|undefined) {
         const base64Data = await base64FromPath(photo.webviewPath!);
 
         const serverPhoto = await updatePhoto(token, {_id: photo._id, base64: base64Data, bookId: bookId})
+
         await writeFile({
             path: `${bookId}.jpeg`,
             data: base64Data,

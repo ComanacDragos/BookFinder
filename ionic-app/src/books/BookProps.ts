@@ -6,4 +6,10 @@ export interface BookProps {
   library: string;
   isAvailable: boolean;
   pages: number;
+  position: BookPosition
+}
+
+export interface BookPosition{
+  lat?: number,
+  lng?: number
 }

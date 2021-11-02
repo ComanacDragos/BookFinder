@@ -87,6 +87,7 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                                   dueDate={props.payload.dueDate}
                                   isAvailable={props.payload.isAvailable}
                                   pages={props.payload.pages}
+                                  position={props.payload.position || {}}
                                   onEdit={() => {}} />
                         </IonCard>)
                     })
@@ -105,7 +106,9 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                                   dueDate={props.dueDate}
                                   isAvailable={props.isAvailable}
                                   pages={props.pages}
-                                  onEdit={id => history.push(`/book/${id}`)} />
+                                  onEdit={id => history.push(`/book/${id}`)}
+                                  position={props.position || {}}
+                            />
                         </IonCard>)
                     })
                 }

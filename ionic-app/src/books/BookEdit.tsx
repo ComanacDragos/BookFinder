@@ -17,12 +17,14 @@ import {
 import { getLogger } from '../core';
 import { BookContext } from './BookProvider';
 import { RouteComponentProps } from 'react-router';
-import {BookProps} from './BookProps';
+import {BookPosition, BookProps} from './BookProps';
 import {NetworkStatus} from "../networkStatus";
 import {NetworkStatusContext} from "../networkStatus/NetworkStatusProvider";
 import { camera } from 'ionicons/icons';
 import {usePhoto} from "../photos/usePhoto";
 import {AuthContext} from "../auth";
+import {useMyLocation} from "../maps/useMyLocation";
+import {MyMap} from "../maps/MyMap";
 
 const log = getLogger('BookEdit');
 
@@ -34,7 +36,11 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
     const { books, saving, savingError, saveBook, deleteBook, deleteError, deleting } = useContext(BookContext);
     const {connected} = useContext(NetworkStatusContext);
 
-    //const [text, setText] = useState('');
+    const myLocation = useMyLocation();
+    const { latitude: lat, longitude: lng } = myLocation.position?.coords || {}
+
+    const [bookPosition, setBookPosition] = useState<BookPosition>({lat: undefined, lng: undefined})
+
     const [title, setTitle] = useState('');
     const [library, setLibrary] = useState('');
     const [isAvailable, setIsAvailable] = useState(true);
@@ -56,6 +62,7 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
             setIsAvailable(book.isAvailable);
             setPages(book.pages);
             setDueDate(book.dueDate);
+            setBookPosition(book.position)
         }
     }, [match.params.id, books]);
     const handleSave = async () => {
@@ -66,6 +73,7 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
                 isAvailable: isAvailable,
                 dueDate: dueDate,
                 pages: pages,
+                position: bookPosition
             }
             : { title:title,
                 library: library,
@@ -73,8 +81,8 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
                 date: new Date(Date.now()),
                 dueDate: dueDate,
                 pages: pages,
+                position: bookPosition
         };
-
         saveBook && saveBook(editedBook, connected)
             .then(async bookId => bookId && photo.webviewPath
                 && await savePicture(bookId))
@@ -96,9 +104,9 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
                 <IonToolbar>
                     <IonTitle>Edit</IonTitle>
                     <IonButtons slot="end">
-                        <IonButton onClick={handleDelete}>
-                            Delete
-                        </IonButton>
+                        {/*<IonButton onClick={handleDelete}>*/}
+                        {/*    Delete*/}
+                        {/*</IonButton>*/}
                         <IonButton onClick={handleSave}>
                             Save
                         </IonButton>
@@ -131,6 +139,21 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
                     <IonImg src={photo.webviewPath}/>
                 </IonItem>}
 
+                <IonItem>
+                    Latitude: {JSON.stringify(bookPosition.lat)}
+                </IonItem>
+                <IonItem>
+                    Longitude: {JSON.stringify(bookPosition.lng)}
+                </IonItem>
+                    {//bookPosition.lng && bookPosition.lat &&
+                    <MyMap
+                        lat={bookPosition.lat || lat || 0}
+                        lng={bookPosition.lng || lng || 0}
+                        onMapClick={clickMap('onMap')}
+                        onMarkerClick={log('onMarker')}
+                    />
+                    }
+
                 <IonFab vertical="bottom" horizontal="center" slot="fixed">
                     <IonFabButton onClick={() => takePhoto()}>
                         <IonIcon icon={camera}/>
@@ -140,6 +163,13 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
             </IonContent>
         </IonPage>
     );
+    function clickMap(source: string) {
+        return (e: any) => {
+            console.log(source, e.latLng.lat(), e.latLng.lng());
+            if(e.latLng.lat() && e.latLng.lng())
+              setBookPosition({lat: e.latLng.lat(), lng: e.latLng.lng()})
+        }
+    }
 };
 
 export default BookEdit;
