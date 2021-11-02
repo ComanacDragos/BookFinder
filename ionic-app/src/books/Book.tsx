@@ -34,7 +34,6 @@ const Book: React.FC<BookPropsExt> = (props) => {
                }
            </div>
         </IonItem>
-
     );
 };
 

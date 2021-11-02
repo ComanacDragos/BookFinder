@@ -66,8 +66,8 @@ export function usePhoto(bookId: string|undefined) {
         }else{
             if(bookId){
                 const photoFromServer = await getPhoto(token, bookId)
-                //console.log(JSON.stringify(photo))
-                if(photoFromServer !== null){
+                console.log(JSON.stringify(photo))
+                if(photoFromServer && photoFromServer !== null){
                     await setPhoto({_id: photoFromServer._id, filepath: `${id}.jpeg`, webviewPath: photoFromServer.base64})
                     await writeFile({
                         path: `${bookId}.jpeg`,

@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import { Redirect } from 'react-router-dom';
 import { RouteComponentProps } from 'react-router';
 import {
@@ -15,6 +15,7 @@ import {
 import { AuthContext } from './AuthProvider';
 import { getLogger } from '../core';
 import {NetworkStatus} from "../networkStatus";
+import { createAnimation } from '@ionic/react';
 
 const log = getLogger('Login');
 
@@ -33,6 +34,8 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
         login?.(username, password);
     };
     log('render');
+    useEffect(animateLoginButton, [])
+
     if (isAuthenticated) {
         return <Redirect to={{ pathname: '/' }} />
     }
@@ -63,8 +66,8 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
                         })}/>
                     <IonLoading isOpen={isAuthenticating}/>
 
-                    <IonButton onClick={handleLogin}>Login</IonButton>
-                    <IonButton onClick={()=> clearError(()=> history.push("/signup"))}>Signup</IonButton>
+                    <IonButton id="loginButton" onClick={handleLogin}>Login</IonButton>
+                    <IonButton id="signupButton" onClick={()=> clearError(()=> history.push("/signup"))}>Signup</IonButton>
                 </div>
                 {authenticationError && (
                     <div>{authenticationError || 'Failed to authenticate'}</div>
@@ -72,4 +75,22 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
             </IonContent>
         </IonPage>
     );
+
+    function animateLoginButton(){
+        const el = document.querySelector('#loginButton');
+        if (el) {
+            const animation = createAnimation()
+                .addElement(el)
+                .duration(500)
+                .direction('alternate')
+                .iterations(Infinity)
+                .keyframes([
+                    { offset: 0, opacity: '1' },
+                    {
+                        offset: 1, opacity: '0.5'
+                    },
+                ]);
+            animation.play();
+        }
+    }
 };

@@ -19,6 +19,7 @@ import { BookContext } from './BookProvider';
 import {AuthContext} from "../auth";
 import {NetworkStatus} from "../networkStatus";
 import {NetworkStatusContext} from "../networkStatus/NetworkStatusProvider";
+import {ViewLocationOnMapModal} from "./ViewLocationOnMapModal";
 
 const log = getLogger('BookList');
 
@@ -89,6 +90,9 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                                   pages={props.payload.pages}
                                   position={props.payload.position || {}}
                                   onEdit={() => {}} />
+                            {props.position && props.position.lng && props.position.lat &&
+                            <ViewLocationOnMapModal lat={props.position.lat} lng={props.position.lng}/>
+                            }
                         </IonCard>)
                     })
                 }
@@ -97,7 +101,7 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                 }
                 {
                     books?.map((props) =>{
-                        return (<IonCard key={props._id}>
+                        return (<IonCard class="column" key={props._id}>
                             <Book key={props._id}
                                   _id={props._id}
                                   title={props.title}
@@ -109,6 +113,9 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                                   onEdit={id => history.push(`/book/${id}`)}
                                   position={props.position || {}}
                             />
+                            {props.position && props.position.lng && props.position.lat &&
+                            <ViewLocationOnMapModal lat={props.position.lat} lng={props.position.lng}/>
+                            }
                         </IonCard>)
                     })
                 }

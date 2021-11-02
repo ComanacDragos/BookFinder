@@ -20,11 +20,13 @@ import { RouteComponentProps } from 'react-router';
 import {BookPosition, BookProps} from './BookProps';
 import {NetworkStatus} from "../networkStatus";
 import {NetworkStatusContext} from "../networkStatus/NetworkStatusProvider";
-import { camera } from 'ionicons/icons';
+import {camera} from 'ionicons/icons';
 import {usePhoto} from "../photos/usePhoto";
 import {AuthContext} from "../auth";
 import {useMyLocation} from "../maps/useMyLocation";
 import {MyMap} from "../maps/MyMap";
+import { createAnimation } from '@ionic/react';
+import {validateContent} from "ionicons/dist/types/components/icon/validate";
 
 const log = getLogger('BookEdit');
 
@@ -51,6 +53,8 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
 
     const [book, setBook] = useState<BookProps>();
 
+    useEffect(animateButtons, [])
+
     useEffect(() => {
         log('useEffect');
         const routeId = match.params.id || '';
@@ -66,6 +70,11 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
         }
     }, [match.params.id, books]);
     const handleSave = async () => {
+        if(!title || title==="" || !library || library === ""){
+            required()
+            return
+        }
+
         const editedBook = book ?
             { ...book,
                 title:title,
@@ -104,21 +113,21 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
                 <IonToolbar>
                     <IonTitle>Edit</IonTitle>
                     <IonButtons slot="end">
-                        {/*<IonButton onClick={handleDelete}>*/}
-                        {/*    Delete*/}
-                        {/*</IonButton>*/}
-                        <IonButton onClick={handleSave}>
+                        <IonButton id="deleteButton" onClick={handleDelete}>
+                            Delete
+                        </IonButton>
+                        <IonButton id="saveButton" onClick={handleSave}>
                             Save
                         </IonButton>
                     </IonButtons>
                 </IonToolbar>
             </IonHeader>
             <IonContent>
-                <IonItem>
+                <IonItem id="titleInput">
                     <IonLabel>Title:</IonLabel>
                     <IonInput value={title} onIonChange={e => setTitle(e.detail.value || '')} />
                 </IonItem>
-                <IonItem>
+                <IonItem id="libraryInput">
                     <IonLabel>Library:</IonLabel>
                     <IonInput value={library} onIonChange={e => setLibrary(e.detail.value || '')} />
                 </IonItem>
@@ -168,6 +177,62 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
             console.log(source, e.latLng.lat(), e.latLng.lng());
             if(e.latLng.lat() && e.latLng.lng())
               setBookPosition({lat: e.latLng.lat(), lng: e.latLng.lng()})
+        }
+    }
+    function required() {
+        const titleInput = document.querySelector('#titleInput');
+        const libraryInput = document.querySelector('#libraryInput');
+        if (titleInput && libraryInput) {
+            (async () => {
+                if(!title || title==="")
+                    await initAnimation(titleInput).play();
+                if(!library || library==="")
+                    await initAnimation(libraryInput).play();
+            })();
+        }
+        function initAnimation(el: any){
+            return createAnimation()
+                .addElement(el)
+                .duration(200)
+                .direction('alternate')
+                .iterations(2)
+                .keyframes([
+                    { offset: 0, opacity: '1' },
+                    {
+                        offset: 0.5, opacity: '0.5', transform: "rotate(5deg)"
+                    },
+                    {
+                        offset: 1, opacity: '1', transform: "rotate(-5deg)"
+                    }
+                ]);
+        }
+    }
+
+    function animateButtons() {
+        const saveButton = document.querySelector('#saveButton');
+        const deleteButton = document.querySelector('#deleteButton');
+        if (saveButton && deleteButton) {
+            const animationA = initAnimation(saveButton)
+            const animationB = initAnimation(deleteButton)
+            const parentAnimation = createAnimation()
+                .duration(1000)
+                .direction("alternate")
+                .iterations(Infinity)
+                .addAnimation([animationA, animationB]);
+            parentAnimation.play();
+        }
+        function initAnimation(el: any){
+            return createAnimation()
+                .addElement(el)
+                .keyframes([
+                    { offset: 0, opacity: '1', transform: "rotate(30deg)" },
+                    {
+                        offset: 0.5, opacity: '0.5', //
+                    },
+                    {
+                        offset: 1, opacity: '1', transform: "rotate(-30deg)"
+                    }
+                ]);
         }
     }
 };

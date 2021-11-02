@@ -15,7 +15,7 @@ export const useMyLocation = () => {
 
   function watchMyLocation() {
     let cancelled = false;
-    Geolocation.getCurrentPosition({maximumAge:60000, timeout:5000, enableHighAccuracy:true})
+    Geolocation.getCurrentPosition({maximumAge:60000, timeout:500, enableHighAccuracy:true})
       .then(position => updateMyPosition('current', position))
       .catch(error => updateMyPosition('current',undefined, error));
     const callbackId = Geolocation.watchPosition({}, (position, error) => {
@@ -27,9 +27,9 @@ export const useMyLocation = () => {
     };
 
     function updateMyPosition(source: string, position?: Position, error: any = undefined) {
+      log(source, position?.coords.latitude, position?.coords.longitude, error);
       if(!position)
         return
-      log(source, position?.coords.latitude, position?.coords.longitude, error);
       if (!cancelled) {
         setState({ ...state, position: position || state.position, error });
       }

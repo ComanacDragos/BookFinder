@@ -278,3 +278,7 @@ div{
   height: 15em;
   margin: auto;
 }
+
+ion-modal {
+  height: 400px;
+}
