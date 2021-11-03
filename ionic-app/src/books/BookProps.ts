@@ -1,3 +1,5 @@
+import {Photo} from "../photos/usePhoto";
+
 export interface BookProps {
   _id?: string;
   title: string;
@@ -6,6 +8,7 @@ export interface BookProps {
   library: string;
   isAvailable: boolean;
   pages: number;
+  image?: Photo
   position: BookPosition
 }
 

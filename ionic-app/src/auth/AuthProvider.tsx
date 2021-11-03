@@ -6,8 +6,8 @@ import {LocationState} from "@ionic/react-router/dist/types/ReactRouter/IonRoute
 import {getToken, removeActions, removeToken, setToken} from "../storage";
 import {remove} from "ionicons/icons";
 import {NetworkStatusContext} from "../networkStatus/NetworkStatusProvider";
-import {removePhotos} from "../storage/photoStorage";
 import {useFilesystem} from "@ionic/react-hooks/filesystem";
+import {removeState} from "../storage/stateStorage";
 
 const log = getLogger('AuthProvider');
 
@@ -181,7 +181,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         log('logout')
         removeToken();
         removeActions();
-        removePhotos(deleteFile);
         setState({
             ...state,
             isAuthenticated: false,

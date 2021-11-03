@@ -9,7 +9,9 @@ interface BookPropsExt extends BookProps {
 }
 
 const Book: React.FC<BookPropsExt> = (props) => {
-    const {photo} = usePhoto(props._id)
+    const {photo, loadSaved} = usePhoto()
+    if(props.image?.webviewPath)
+        loadSaved(props.image?.webviewPath!)
     return (
         <IonItem onClick={() => props.onEdit(props._id)}>
            <div className="book">
@@ -24,12 +26,10 @@ const Book: React.FC<BookPropsExt> = (props) => {
                        }
                    </IonLabel>
                </div>
-
                <IonLabel>{props.library}</IonLabel>
                <IonLabel>{new Date(props.dueDate).toDateString()}</IonLabel>
                <IonLabel>Pages: {props.pages}</IonLabel>
-
-               {photo && photo.webviewPath && photo.webviewPath !== '' &&
+               {props.image && props.image.webviewPath !== '' &&
                    <IonImg class="myImg" src={photo.webviewPath}/>
                }
            </div>

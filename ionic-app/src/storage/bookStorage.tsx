@@ -23,3 +23,4 @@ export const getActions = async () => {
 export const removeActions = async () =>{
     await Storage.remove({key: 'actions'})
 }
+

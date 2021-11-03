@@ -5,8 +5,7 @@ import Router from 'koa-router';
 import bodyParser from "koa-bodyparser";
 import { timingLogger, exceptionHandler, jwtConfig, initWss, verifyClient } from './utils';
 import { router as bookRouter } from './book';
-import { router as authRouter } from './auth';
-import {router as photoRouter} from './photo'
+import { router as authRouter } from './auth'
 import jwt from 'koa-jwt';
 import cors from '@koa/cors';
 
@@ -40,7 +39,6 @@ const protectedApiRouterPhotos = new Router({prefix});
 protectedApiRouter
     .use('/book', bookRouter.routes());
 
-protectedApiRouterPhotos.use("/photo", photoRouter.routes())
 app
     .use(protectedApiRouter.routes())
     .use(protectedApiRouter.allowedMethods())

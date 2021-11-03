@@ -20,6 +20,8 @@ import {AuthContext} from "../auth";
 import {NetworkStatus} from "../networkStatus";
 import {NetworkStatusContext} from "../networkStatus/NetworkStatusProvider";
 import {ViewLocationOnMapModal} from "./ViewLocationOnMapModal";
+import {removeState} from "../storage/stateStorage";
+import {useFilesystem} from "@ionic/react-hooks/filesystem";
 
 const log = getLogger('BookList');
 
@@ -27,6 +29,8 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
     const { filter, setFilterFn, libraries, clearData, offset, books, fetching, fetchingError, savingError, deleteError, fetchPaginated, disableInfiniteScroll, actions } = useContext(BookContext);
     const {logout, token} = useContext(AuthContext);
     const {connected} = useContext(NetworkStatusContext);
+
+    const {deleteFile} = useFilesystem()
 
     useIonViewWillEnter(async () =>{
         if(offset ===0)
@@ -41,6 +45,7 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
     async function logoutHandle(){
         if(logout && clearData){
             log('logout handle')
+            removeState(deleteFile);
             clearData()
             logout()
         }
@@ -88,6 +93,7 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                                   dueDate={props.payload.dueDate}
                                   isAvailable={props.payload.isAvailable}
                                   pages={props.payload.pages}
+                                  image={props.image}
                                   position={props.payload.position || {}}
                                   onEdit={() => {}} />
                             {props.position && props.position.lng && props.position.lat &&
@@ -110,6 +116,7 @@ const BookList: React.FC<RouteComponentProps> = ({ history }) => {
                                   dueDate={props.dueDate}
                                   isAvailable={props.isAvailable}
                                   pages={props.pages}
+                                  image={props.image}
                                   onEdit={id => history.push(`/book/${id}`)}
                                   position={props.position || {}}
                             />

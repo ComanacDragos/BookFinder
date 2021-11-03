@@ -17,6 +17,10 @@ import {NetworkStatusContext} from "../networkStatus/NetworkStatusProvider";
 import {addAction, getActions, getToken, removeActions} from "../storage";
 import {useFilesystem} from "@ionic/react-hooks/filesystem";
 import {save} from "ionicons/icons";
+import {useMyLocation} from "../maps/useMyLocation";
+import {usePhoto} from "../photos/usePhoto";
+import {setState} from "../storage/stateStorage";
+import {Directory} from "@capacitor/filesystem";
 
 const log = getLogger('BookProvider');
 
@@ -178,6 +182,13 @@ const reducer: (state: BooksState, action: ActionProps) => BooksState =
         }
     };
 
+const persistentReducer: (state: BooksState, action: ActionProps) => BooksState =
+    (state, action) => {
+        const newState = reducer(state, action)
+        setState(newState)
+        return newState
+    }
+
 export const BookContext = React.createContext<BooksState>(initialState);
 
 interface BookProviderProps {
@@ -188,12 +199,14 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
     const {connected} = useContext(NetworkStatusContext);
     const { token, isAuthenticated } = useContext(AuthContext);
 
-    const [state, dispatch] = useReducer(reducer, initialState);
+    const [state, dispatch] = useReducer(persistentReducer, initialState);
     const { startFiltering, books, libraries, filter, fetching, fetchingError, saving, savingError, deleting, deleteError, offset, disableInfiniteScroll, clearData, settingActions, actions } = state;
     const { deleteFile, readFile, writeFile } = useFilesystem();
 
+    const {saveBase64Picture, setPhoto, savePicture} = usePhoto()
+
     //useEffect(getBooksPaginatedEffect, [token]);
-    useEffect(wsEffect, [token]);
+    useEffect(wsEffect, [token, books]);
     useEffect(backOnlineEffect, [connected])
     useEffect(setLibrariesEffect, [books])
 
@@ -313,6 +326,10 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
             const books = filter ? await getBooksPaginatedAndFiltered(token, offset, filter):await getBooksPaginated(token, offset);
             log('fetchBooksPaginated succeeded - books:', books.length, " offset: ", offset);
             if(books && books.length>0){
+                for(let i=0;i<books.length;i++){
+                    books[i].image && books[i].image!.webviewPath && (books[i].image = await saveBase64Picture(books[i].image!.webviewPath!, books[i]._id!))
+                }
+
                 dispatch({ type: FETCH_BOOKS_PAGINATED_SUCCEEDED, payload: { books: books, offset: offset } });
                 if(books.length < 3)
                     dispatch({type: DISABLE_INFINITE_SCROLL, payload: {offset: offset}});
@@ -339,7 +356,7 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
             try {
                 log('fetchBooks started');
                 dispatch({ type: FETCH_BOOKS_STARTED });
-                const books = await getBooks(token);
+                let books = await getBooks(token);
                 log('fetchBooks succeeded');
                 if (!canceled) {
                     dispatch({ type: FETCH_BOOKS_SUCCEEDED, payload: { books: books } });
@@ -401,9 +418,15 @@ export const BookProvider: React.FC<BookProviderProps> = ({ children }) => {
                 const { event, payload: book} = message;
                 log(`ws message, book ${event} -- ${book.title}`);
                 if (event === 'created' || event === 'updated') {
-                    dispatch({ type: SAVE_BOOK_SUCCEEDED, payload: { book: book } });
+                    saveBase64Picture(book.image?.webviewPath!, book._id!).then(img =>{
+                        dispatch({ type: SAVE_BOOK_SUCCEEDED, payload: { book: {...book, image: img} } });
+                    })
                 }
                 if(event === 'deleted'){
+                    deleteFile({
+                        path: `${books?.find(b=>b._id === book._id)?.image?.filename}`,
+                        directory: Directory.Documents,
+                    })
                     dispatch({type: DELETE_BOOK_SUCCEEDED, payload: {bookId: book._id}})
                 }
             });

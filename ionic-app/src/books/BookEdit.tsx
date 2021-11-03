@@ -27,6 +27,7 @@ import {useMyLocation} from "../maps/useMyLocation";
 import {MyMap} from "../maps/MyMap";
 import { createAnimation } from '@ionic/react';
 import {validateContent} from "ionicons/dist/types/components/icon/validate";
+import {base64FromPath} from "@ionic/react-hooks/filesystem";
 
 const log = getLogger('BookEdit');
 
@@ -49,9 +50,12 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
     const [pages, setPages] = useState(0);
     const [dueDate, setDueDate] = useState(new Date(Date.now()))
 
-    const {photo, takePhoto, savePicture} = usePhoto(match.params.id)
+    const {photo, takePhoto, loadSaved} = usePhoto()
 
     const [book, setBook] = useState<BookProps>();
+
+    if(!photo.webviewPath && book && book.image && book.image.filename)
+        loadSaved(book.image.filename)
 
     useEffect(animateButtons, [])
 
@@ -67,6 +71,8 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
             setPages(book.pages);
             setDueDate(book.dueDate);
             setBookPosition(book.position)
+            //setPhoto(book.image || {})
+            //alert(JSON.stringify(book.image))
         }
     }, [match.params.id, books]);
     const handleSave = async () => {
@@ -74,15 +80,18 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
             required()
             return
         }
-
+        const b64 = photo.webviewPath? await base64FromPath(photo.webviewPath) : ""
+        const b64Image = {webviewPath: b64}
         const editedBook = book ?
             { ...book,
                 title:title,
                 library: library,
                 isAvailable: isAvailable,
+                date: new Date(Date.now()),
                 dueDate: dueDate,
                 pages: pages,
-                position: bookPosition
+                position: bookPosition,
+                image: b64Image
             }
             : { title:title,
                 library: library,
@@ -90,11 +99,10 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
                 date: new Date(Date.now()),
                 dueDate: dueDate,
                 pages: pages,
-                position: bookPosition
+                position: bookPosition,
+                image: b64Image
         };
         saveBook && saveBook(editedBook, connected)
-            .then(async bookId => bookId && photo.webviewPath
-                && await savePicture(bookId))
             .then(() => history.goBack());
     };
 
@@ -111,7 +119,7 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
             <NetworkStatus/>
             <IonHeader>
                 <IonToolbar>
-                    <IonTitle>Edit</IonTitle>
+                    <IonTitle>Edit {JSON.stringify(photo.webviewPath?.length)}</IonTitle>
                     <IonButtons slot="end">
                         <IonButton id="deleteButton" onClick={handleDelete}>
                             Delete
