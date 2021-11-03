@@ -3,15 +3,19 @@ import {IonIcon, IonImg, IonItem, IonLabel} from '@ionic/react';
 import { BookProps } from './BookProps';
 import {checkmarkCircleOutline, removeCircleOutline} from "ionicons/icons";
 import {usePhoto} from "../photos/usePhoto";
+import {getLogger} from "../core";
 
 interface BookPropsExt extends BookProps {
     onEdit: (id?: string) => void;
 }
 
+const log = getLogger("book")
+
 const Book: React.FC<BookPropsExt> = (props) => {
     const {photo, loadSaved} = usePhoto()
     if(props.image?.webviewPath)
         loadSaved(props.image?.webviewPath!)
+    log(props._id)
     return (
         <IonItem onClick={() => props.onEdit(props._id)}>
            <div className="book">

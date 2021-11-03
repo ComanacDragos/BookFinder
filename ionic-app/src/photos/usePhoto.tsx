@@ -57,6 +57,8 @@ export function usePhoto() {
     };
     const loadSaved = async (path: string) => {
         log(`loadSaved`)
+        if(photo.webviewPath)
+            return
         const filename = path.substr(path.lastIndexOf('/') + 1);
         const file = await readFile({
                 path: filename,
