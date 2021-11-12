@@ -76,6 +76,7 @@ const createBook = async (ctx, book, response) => {
     try{
         const userId = ctx.state.user._id;
         book.userId = userId;
+        delete book._id
         response.body = await bookStore.insert(book);
         response.status = 201;
         broadcast(userId, {event: 'created', payload: response.body});

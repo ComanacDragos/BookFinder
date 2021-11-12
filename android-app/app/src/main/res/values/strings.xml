@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">android-app</string>
+    <string name="action_settings">Settings</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="fragment_login_label">Login Fragment</string>
+    <string name="book_list_fragment_label">BookList Fragment</string>
+    <string name="book_edit_fragment_label">BookEdit Fragment</string>
+
+    <string name="edit">Edit</string>
+    <string name="cancel">Cancel</string>
+    <string name="login">Login</string>
+    <string name="username">Username</string>
+    <string name="invalid_username">Not a valid username</string>
+    <string name="invalid_password">Password must not be empty</string>
+    <string name="password">Password</string>
+    <string name="sign_in">Sign In</string>
+    <string name="book_list_fragment">Item list fragment</string>
+    <string name="book_edit_fragment">Item edit fragment</string>
+
+    <string name="title">Title:</string>
+    <string name="library">Library:</string>
+    <string name="pages">Pages:</string>
+    <string name="isAvailable">Is available:</string>
+    <string name="dueDate">Due date:</string>
+</resources>

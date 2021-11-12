@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/fragment_login">
+
+    <fragment
+        android:id="@+id/fragment_login"
+        android:name="ro.ubb.android_app.auth.login.LoginFragment"
+        android:label="@string/fragment_login_label"
+        tools:layout="@layout/fragment_login">
+
+        <!--<action
+            android:id="@+id/action_login_to_list"
+            app:destination="@id/fragment_book_list" />
+        -->
+    </fragment>
+    <fragment
+        android:id="@+id/fragment_book_list"
+        android:name="ro.ubb.android_app.book.books.BookListFragment"
+        android:label="@string/book_list_fragment_label"
+        tools:layout="@layout/fragment_book_list">
+
+        <!--
+        <action
+            android:id="@+id/action_list_to_login"
+            app:destination="@id/fragment_login" />
+            -->
+        <action
+            android:id="@+id/action_list_to_edit"
+            app:destination="@id/fragment_book_edit" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/fragment_book_edit"
+        android:name="ro.ubb.android_app.book.book.BookEditFragment"
+        android:label="@string/book_edit_fragment_label"
+        tools:layout="@layout/fragment_book_edit">
+
+        <action
+            android:id="@+id/action_edit_to_list"
+            app:destination="@id/fragment_book_list" />
+    </fragment>
+</navigation>

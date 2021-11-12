@@ -119,7 +119,7 @@ const BookEdit: React.FC<BookEditProps> = ({ history, match }) => {
             <NetworkStatus/>
             <IonHeader>
                 <IonToolbar>
-                    <IonTitle>Edit {JSON.stringify(photo.webviewPath?.length)}</IonTitle>
+                    <IonTitle>Edit</IonTitle>
                     <IonButtons slot="end">
                         <IonButton id="deleteButton" onClick={handleDelete}>
                             Delete
