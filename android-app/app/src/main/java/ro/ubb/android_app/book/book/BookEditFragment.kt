@@ -28,8 +28,9 @@ class BookEditFragment : Fragment() {
 
     private lateinit var viewModel: BookEditViewModel
     private var bookId: String? = null
+    private var book: Book? = null
 
-    private var selectedDate : Long = 0;
+    private var selectedDate : Long = Date().time;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,46 +60,31 @@ class BookEditFragment : Fragment() {
         Log.v(TAG, "onActivityCreated")
         setupViewModel()
         fab.setOnClickListener {
-            Log.v(TAG, "save book")
-            var id:String? = null
-            bookId?.let {
-                id = it
+            Log.v(TAG, "save book - $book")
+            val i = book
+            if(i!=null){
+                i.title = titleEdit.text.toString()
+                i.library = libraryEdit.text.toString()
+                if(pagesEdit.text.toString().isEmpty())
+                    i.pages = 0
+                else
+                    i.pages = pagesEdit.text.toString().toInt()
+                i.isAvailable = isAvailableEdit.isChecked
+                i.date = Date()
+                i.dueDate = Date(selectedDate)//dueDateEdit.text
+                viewModel.saveOrUpdateBook(i)
             }
-            val sdf = SimpleDateFormat("dd-MM-yyyy")
-            Log.i(TAG, "calendar ${calendarView.date} ${Date(calendarView.date)}")
-            viewModel.saveOrUpdateBook(
-                Book(
-                    _id = id,
-                    title = titleEdit.text.toString(),
-                    library = libraryEdit.text.toString(),
-                    pages = pagesEdit.text.toString().toInt(),
-                    isAvailable = isAvailableEdit.isChecked,
-                    date = Date(),
-                    dueDate = Date(selectedDate)//dueDateEdit.text
-                )
-            )
         }
 
         calendarView.setOnDateChangeListener { calendarView, i, i2, i3 ->
             selectedDate = GregorianCalendar(i, i2, i3).timeInMillis
-            //Log.i(TAG, "${i} ${i2} ${i3} ${selectedDate} ${Date().time}")
+            Log.i(TAG, "${i} ${i2} ${i3} ${selectedDate} ${Date().time}")
         }
     }
 
     private fun setupViewModel() {
         viewModel = ViewModelProvider(this).get(BookEditViewModel::class.java)
-        viewModel.book.observe(viewLifecycleOwner, { book ->
-            if(book._id?.isEmpty() == true)
-                return@observe
-            Log.v(TAG, "update book${book}")
-            titleEdit.setText(book.title)
-            libraryEdit.setText(book.library)
-            pagesEdit.setText(book.pages.toString())
-            if(book.isAvailable)
-                isAvailableEdit.isChecked = true
-            calendarView.date = book.dueDate.time
-            selectedDate = book.dueDate.time
-        })
+
         viewModel.fetching.observe(viewLifecycleOwner, { fetching ->
             Log.v(TAG, "update fetching")
             progress.visibility = if (fetching) View.VISIBLE else View.GONE
@@ -120,9 +106,22 @@ class BookEditFragment : Fragment() {
             }
         })
         val id = bookId
-        if (id != null) {
-            viewModel.loadBook(id)
+        if (id == null) {
+            Log.v(TAG, "New book")
+            book = Book("", "", Date(), Date(), "", false, -1)
+        }else{
+            Log.v(TAG, "Update book $id")
+            viewModel.getBookById(id).observe(viewLifecycleOwner, {
+                Log.v(TAG, "start update book $it")
+                if (it != null) {
+                    book = it
+                    titleEdit.setText(it.title)
+                    libraryEdit.setText(it.library)
+                    pagesEdit.setText(it.pages.toString())
+                    isAvailableEdit.isChecked = it.isAvailable
+                    calendarView.setDate(it.dueDate.time)
+                }
+            })
         }
     }
-
 }

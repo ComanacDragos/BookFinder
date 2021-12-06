@@ -1,70 +1,51 @@
 package ro.ubb.android_app.book.book
 
+import android.app.Application
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import kotlinx.coroutines.launch
 import ro.ubb.android_app.book.data.Book
 import ro.ubb.android_app.book.data.BookRepository
+import ro.ubb.android_app.book.data.local.BookDatabase
 import java.util.*
 import ro.ubb.android_app.core.TAG
 import ro.ubb.android_app.core.Result
 
-class BookEditViewModel: ViewModel() {
-    private val mutableBook = MutableLiveData<Book>().apply { value = Book(_id = "", title = "", library = "", pages = -1, date = Date(), dueDate = Date(), isAvailable = false) }
+class BookEditViewModel(application: Application) : AndroidViewModel(application) {
     private val mutableFetching = MutableLiveData<Boolean>().apply { value = false }
     private val mutableCompleted = MutableLiveData<Boolean>().apply { value = false }
     private val mutableException = MutableLiveData<Exception>().apply { value = null }
 
-    val book: LiveData<Book> = mutableBook
     val fetching: LiveData<Boolean> = mutableFetching
     val fetchingError: LiveData<Exception> = mutableException
     val completed: LiveData<Boolean> = mutableCompleted
 
-    fun loadBook(bookId: String) {
-        viewModelScope.launch {
-            Log.v(TAG, "loadBook...");
-            mutableFetching.value = true
-            mutableException.value = null
-            when (val result = BookRepository.load(bookId)) {
-                is Result.Success -> {
-                    Log.d(TAG, "loadBook succeeded");
-                    mutableBook.value = result.data
-                }
-                is Result.Error -> {
-                    Log.w(TAG, "loadBook failed", result.exception);
-                    mutableException.value = result.exception
-                }
-            }
-            mutableFetching.value = false
-        }
+    val bookRepository: BookRepository
+
+    init{
+        val bookDao = BookDatabase.getDatabase(application, viewModelScope).bookDao()
+        bookRepository = BookRepository(bookDao)
+    }
+
+    fun getBookById(bookId: String): LiveData<Book> {
+        Log.v(TAG, "getBookById...")
+        return bookRepository.getById(bookId)
     }
 
     fun saveOrUpdateBook(newBook: Book) {
         viewModelScope.launch {
-            Log.v(TAG, "saveOrUpdateBook...${newBook}");
-
-            val book = mutableBook.value ?: return@launch
-            book.title = newBook.title
-            book.library = newBook.library
-            book.date = newBook.date
-            book.isAvailable = newBook.isAvailable
-            book.pages = newBook.pages
-            book.dueDate = newBook.dueDate
+            Log.v(TAG, "saveOrUpdateBook...");
             mutableFetching.value = true
             mutableException.value = null
             val result: Result<Book>
-            if (book._id?.isNotEmpty() == true) {
-                result = BookRepository.update(book)
+            if (newBook._id.isNotEmpty()) {
+                result = bookRepository.update(newBook)
             } else {
-                result = BookRepository.save(book)
+                result = bookRepository.save(newBook)
             }
-            when (result) {
+            when(result) {
                 is Result.Success -> {
                     Log.d(TAG, "saveOrUpdateBook succeeded");
-                    mutableBook.value = result.data
                 }
                 is Result.Error -> {
                     Log.w(TAG, "saveOrUpdateBook failed", result.exception);

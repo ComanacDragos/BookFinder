@@ -2,6 +2,7 @@ package ro.ubb.android_app.auth.data.remote
 
 import ro.ubb.android_app.auth.data.TokenHolder
 import ro.ubb.android_app.auth.data.User
+import ro.ubb.android_app.book.data.local.BookDao
 import ro.ubb.android_app.core.Api
 import ro.ubb.android_app.core.Result
 
@@ -16,9 +17,10 @@ object AuthRepository {
         user = null
     }
 
-    fun logout() {
+    suspend fun logout(bookDao: BookDao) {
         user = null
         Api.tokenInterceptor.token = null
+        bookDao.deleteAll()
     }
 
     suspend fun login(username: String, password: String): Result<TokenHolder> {

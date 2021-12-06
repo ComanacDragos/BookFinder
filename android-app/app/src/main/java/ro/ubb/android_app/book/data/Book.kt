@@ -1,9 +1,14 @@
 package ro.ubb.android_app.book.data
 
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import java.util.*
 
+
+@Entity(tableName = "books")
 data class Book (
-    val _id: String?,
+    @PrimaryKey @ColumnInfo(name = "_id") val _id: String,
     var title: String,
     var dueDate: Date,
     var date: Date,

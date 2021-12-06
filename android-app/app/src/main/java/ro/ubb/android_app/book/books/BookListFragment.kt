@@ -39,14 +39,20 @@ class BookListFragment : Fragment() {
             findNavController().navigate(R.id.fragment_login)
             return;
         }
-        setupItemList()
+        setupBookList()
         fab.setOnClickListener {
             Log.v(TAG, "add new book")
             findNavController().navigate(R.id.fragment_book_edit)
         }
+
+        logout_fab.setOnClickListener{
+            Log.v(TAG, "logout")
+            booksModel.logout()
+            findNavController().navigate(R.id.fragment_login)
+        }
     }
 
-    private fun setupItemList() {
+    private fun setupBookList() {
         bookListAdapter = BookListAdapter(this)
         book_list.adapter = bookListAdapter
         book_list.addItemDecoration(DividerItemDecoration(this.context, DividerItemDecoration.VERTICAL))
@@ -54,7 +60,7 @@ class BookListFragment : Fragment() {
         booksModel = ViewModelProvider(this).get(BookListViewModel::class.java)
         booksModel.books.observe(viewLifecycleOwner, { books ->
             Log.v(TAG, "update books")
-            bookListAdapter.books = books
+            bookListAdapter.books = books.sortedByDescending { it.date }
         })
         booksModel.loading.observe(viewLifecycleOwner, { loading ->
             Log.i(TAG, "update loading")
@@ -67,7 +73,7 @@ class BookListFragment : Fragment() {
                 Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
             }
         })
-        booksModel.loadBooks()
+        booksModel.refresh()
     }
 
     override fun onDestroy() {

@@ -1,19 +1,20 @@
 package ro.ubb.android_app.auth.login
 
+import android.app.Application
 import android.util.Log
 import android.util.Patterns
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import kotlinx.coroutines.launch
 import ro.ubb.android_app.R
 import ro.ubb.android_app.auth.data.TokenHolder
 import ro.ubb.android_app.auth.data.remote.AuthRepository
+import ro.ubb.android_app.book.data.BookRepository
+import ro.ubb.android_app.book.data.local.BookDao
+import ro.ubb.android_app.book.data.local.BookDatabase
 import ro.ubb.android_app.core.TAG
 import ro.ubb.android_app.core.Result
 
-class LoginViewModel : ViewModel() {
+class LoginViewModel (application: Application) : AndroidViewModel(application) {
 
     private val mutableLoginFormState = MutableLiveData<LoginFormState>()
     val loginFormState: LiveData<LoginFormState> = mutableLoginFormState
