@@ -1,5 +1,6 @@
 package ro.ubb.android_app.book.book
 
+import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.app.Dialog
 import android.os.Bundle
@@ -12,14 +13,16 @@ import android.widget.DatePicker
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import androidx.work.*
 import kotlinx.android.synthetic.main.book_view.view.*
 import kotlinx.android.synthetic.main.fragment_book_edit.*
 import ro.ubb.android_app.R
 import ro.ubb.android_app.book.data.Book
+import ro.ubb.android_app.book.data.local.SyncWorker
 import ro.ubb.android_app.core.TAG
 import java.text.SimpleDateFormat
 import java.util.*
-
+import com.google.gson.Gson
 
 class BookEditFragment : Fragment() {
     companion object {
@@ -61,6 +64,9 @@ class BookEditFragment : Fragment() {
         setupViewModel()
         fab.setOnClickListener {
             Log.v(TAG, "save book - $book")
+            book?.let { it1 -> startAndObserveJob(it1) }
+            return@setOnClickListener
+
             val i = book
             if(i!=null){
                 i.title = titleEdit.text.toString()
@@ -122,6 +128,37 @@ class BookEditFragment : Fragment() {
                     calendarView.setDate(it.dueDate.time)
                 }
             })
+        }
+    }
+
+    @SuppressLint("RestrictedApi")
+    private fun startAndObserveJob(book: Book) {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val gson = Gson()
+
+        val inputData = Data.Builder()
+            .putString("book", gson.toJson(book))
+            .build()
+//        val myWork = PeriodicWorkRequestBuilder<ExampleWorker>(1, TimeUnit.MINUTES)
+        val myWork = OneTimeWorkRequest.Builder(SyncWorker::class.java)
+            .setConstraints(constraints)
+            .setInputData(inputData)
+            .build()
+        val workId = myWork.id
+        this.context?.let {
+            WorkManager.getInstance(it).apply {
+                // enqueue Work
+                enqueue(myWork)
+                // observe work status
+                getWorkInfoByIdLiveData(workId)
+                    .observe(viewLifecycleOwner, { status ->
+                        val isFinished = status?.state?.isFinished
+                        Log.v(TAG, "Job $workId; finished: $isFinished")
+                    })
+            }
         }
     }
 }
