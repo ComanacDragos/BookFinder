@@ -64,9 +64,6 @@ class BookEditFragment : Fragment() {
         setupViewModel()
         fab.setOnClickListener {
             Log.v(TAG, "save book - $book")
-            book?.let { it1 -> startAndObserveJob(it1) }
-            return@setOnClickListener
-
             val i = book
             if(i!=null){
                 i.title = titleEdit.text.toString()
@@ -90,7 +87,7 @@ class BookEditFragment : Fragment() {
 
     private fun setupViewModel() {
         viewModel = ViewModelProvider(this).get(BookEditViewModel::class.java)
-
+        this.context?.let { viewModel.setContext(it) }
         viewModel.fetching.observe(viewLifecycleOwner, { fetching ->
             Log.v(TAG, "update fetching")
             progress.visibility = if (fetching) View.VISIBLE else View.GONE
@@ -128,37 +125,6 @@ class BookEditFragment : Fragment() {
                     calendarView.setDate(it.dueDate.time)
                 }
             })
-        }
-    }
-
-    @SuppressLint("RestrictedApi")
-    private fun startAndObserveJob(book: Book) {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-
-        val gson = Gson()
-
-        val inputData = Data.Builder()
-            .putString("book", gson.toJson(book))
-            .build()
-//        val myWork = PeriodicWorkRequestBuilder<ExampleWorker>(1, TimeUnit.MINUTES)
-        val myWork = OneTimeWorkRequest.Builder(SyncWorker::class.java)
-            .setConstraints(constraints)
-            .setInputData(inputData)
-            .build()
-        val workId = myWork.id
-        this.context?.let {
-            WorkManager.getInstance(it).apply {
-                // enqueue Work
-                enqueue(myWork)
-                // observe work status
-                getWorkInfoByIdLiveData(workId)
-                    .observe(viewLifecycleOwner, { status ->
-                        val isFinished = status?.state?.isFinished
-                        Log.v(TAG, "Job $workId; finished: $isFinished")
-                    })
-            }
         }
     }
 }

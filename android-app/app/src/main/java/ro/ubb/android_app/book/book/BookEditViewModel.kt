@@ -1,6 +1,7 @@
 package ro.ubb.android_app.book.book
 
 import android.app.Application
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.*
 import kotlinx.coroutines.launch
@@ -25,6 +26,10 @@ class BookEditViewModel(application: Application) : AndroidViewModel(application
     init{
         val bookDao = BookDatabase.getDatabase(application, viewModelScope).bookDao()
         bookRepository = BookRepository(bookDao)
+    }
+
+    fun setContext(context: Context){
+        bookRepository.context = context
     }
 
     fun getBookById(bookId: String): LiveData<Book> {

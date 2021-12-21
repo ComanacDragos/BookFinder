@@ -1,5 +1,6 @@
 package ro.ubb.android_app
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
@@ -8,6 +9,10 @@ import androidx.appcompat.app.AppCompatActivity
 import ro.ubb.android_app.core.TAG
 
 class MainActivity : AppCompatActivity() {
+
+    init {
+        instance = this
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,6 +30,14 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.action_logout -> true
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    companion object {
+        private var instance: MainActivity? = null
+
+        fun applicationContext() : Context {
+            return instance!!.applicationContext
         }
     }
 }
