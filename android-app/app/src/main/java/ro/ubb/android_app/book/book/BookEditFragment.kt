@@ -105,7 +105,7 @@ class BookEditFragment : Fragment() {
         viewModel.completed.observe(viewLifecycleOwner, { completed ->
             if (completed) {
                 Log.v(TAG, "completed, navigate back")
-                findNavController().navigateUp()
+                findNavController().navigate(R.id.action_edit_to_list)
             }
         })
         val id = bookId

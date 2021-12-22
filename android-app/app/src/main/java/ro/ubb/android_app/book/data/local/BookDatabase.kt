@@ -46,7 +46,7 @@ abstract class BookDatabase: RoomDatabase(){
                 INSTANCE?.let { database ->
                     scope.launch(Dispatchers.IO) {
                         //populateDatabase(database.bookDao())
-                        database.bookDao().deleteAll()
+                        //bdatabase.bookDao().deleteAll()
                     }
                 }
             }

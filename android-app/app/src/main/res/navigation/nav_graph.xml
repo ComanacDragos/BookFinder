@@ -29,7 +29,11 @@
             -->
         <action
             android:id="@+id/action_list_to_edit"
-            app:destination="@id/fragment_book_edit" />
+            app:destination="@id/fragment_book_edit"
+            app:enterAnim="@anim/slide_in"
+            app:exitAnim="@anim/slide_out"
+            app:popEnterAnim="@anim/slide_in"
+            app:popExitAnim="@anim/slide_out" />
     </fragment>
 
     <fragment
@@ -40,6 +44,10 @@
 
         <action
             android:id="@+id/action_edit_to_list"
-            app:destination="@id/fragment_book_list" />
+            app:destination="@id/fragment_book_list"
+            app:enterAnim="@anim/slide_in"
+            app:exitAnim="@anim/slide_out"
+            app:popEnterAnim="@anim/slide_in"
+            app:popExitAnim="@anim/slide_out" />
     </fragment>
 </navigation>

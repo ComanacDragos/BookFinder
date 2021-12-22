@@ -42,7 +42,7 @@ class BookListFragment : Fragment() {
         setupBookList()
         fab.setOnClickListener {
             Log.v(TAG, "add new book")
-            findNavController().navigate(R.id.fragment_book_edit)
+            findNavController().navigate(R.id.action_list_to_edit)
         }
 
         logout_fab.setOnClickListener{

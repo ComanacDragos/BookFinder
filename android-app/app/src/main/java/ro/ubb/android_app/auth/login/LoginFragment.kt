@@ -1,5 +1,7 @@
 package ro.ubb.android_app.auth.login
 
+import android.animation.Animator
+import android.animation.ValueAnimator
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -7,6 +9,8 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.Animation
+import android.view.animation.AnimationSet
 import android.widget.EditText
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
@@ -71,6 +75,14 @@ class LoginFragment : Fragment() {
             loading.visibility = View.VISIBLE
             error_text.visibility = View.GONE
             viewModel.login(username.text.toString(), password.text.toString())
+        }
+
+        ValueAnimator.ofFloat(0f, 100f, -100f, 0f).apply {
+            duration = 6000
+            start()
+            addUpdateListener {
+                hello.translationX = it.animatedValue as Float
+            }
         }
     }
 }
